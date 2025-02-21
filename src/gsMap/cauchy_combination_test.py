@@ -48,16 +48,16 @@ def acat_test(pvalues, weights=None):
     elif any(i < 0 for i in weights):
         raise Exception("All weights must be positive.")
     else:
-        weights = [i / len(weights) for i in weights]
+        weights = [i / np.sum(weights) for i in weights]
 
     pvalues = np.array(pvalues)
     weights = np.array(weights)
 
-    if not any(i < 1e-16 for i in pvalues):
+    if not any(i < 1e-15 for i in pvalues):
         cct_stat = sum(weights * np.tan((0.5 - pvalues) * np.pi))
     else:
-        is_small = [i < (1e-16) for i in pvalues]
-        is_large = [i >= (1e-16) for i in pvalues]
+        is_small = [i < (1e-15) for i in pvalues]
+        is_large = [i >= (1e-15) for i in pvalues]
         cct_stat = sum((weights[is_small] / pvalues[is_small]) / np.pi)
         cct_stat += sum(weights[is_large] * np.tan((0.5 - pvalues[is_large]) * np.pi))
 
