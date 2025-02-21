@@ -1205,8 +1205,20 @@ class FormatSumstatsConfig:
 
 
 @register_cli(
+    name="quick_mode",
+    description="Run the entire gsMap pipeline in quick mode, utilizing pre-computed weights for faster execution.",
+    add_args_function=add_run_all_mode_args,
+)
+def run_all_mode_from_cli(args: argparse.Namespace):
+    from gsMap.run_all_mode import run_pipeline
+
+    config = get_dataclass_from_parser(args, RunAllModeConfig)
+    run_pipeline(config)
+
+
+@register_cli(
     name="run_find_latent_representations",
-    description="Run Find_latent_representations \nFind the latent representations of each spot by running GNN-VAE",
+    description="Run Find_latent_representations \nFind the latent representations of each spot by running GNN",
     add_args_function=add_find_latent_representations_args,
 )
 def run_find_latent_representation_from_cli(args: argparse.Namespace):
@@ -1278,7 +1290,7 @@ def run_Report_from_cli(args: argparse.Namespace):
 
 @register_cli(
     name="format_sumstats",
-    description="Format gwas summary statistics",
+    description="Format GWAS summary statistics",
     add_args_function=add_format_sumstats_args,
 )
 def gwas_format_from_cli(args: argparse.Namespace):
@@ -1286,18 +1298,6 @@ def gwas_format_from_cli(args: argparse.Namespace):
 
     config = get_dataclass_from_parser(args, FormatSumstatsConfig)
     gwas_format(config)
-
-
-@register_cli(
-    name="quick_mode",
-    description="Run all the gsMap pipeline in quick mode",
-    add_args_function=add_run_all_mode_args,
-)
-def run_all_mode_from_cli(args: argparse.Namespace):
-    from gsMap.run_all_mode import run_pipeline
-
-    config = get_dataclass_from_parser(args, RunAllModeConfig)
-    run_pipeline(config)
 
 
 @register_cli(
