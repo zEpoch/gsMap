@@ -20,7 +20,7 @@ extensions = [
     "sphinxarg.ext",
     "nbsphinx",
     "myst_parser",
-    "sphinx_charts.charts",
+    # "sphinx_charts.charts",
     "sphinxcontrib.jquery",
     "sphinx_inline_tabs",
 ]
@@ -48,6 +48,6 @@ html_theme_options = {
 }
 
 # add plotly.js to the build
-html_js_files = [
-    "https://cdn.plot.ly/plotly-latest.min.js",
-]
+# html_js_files = [
+#     "https://cdn.plot.ly/plotly-latest.min.js",
+# ]
