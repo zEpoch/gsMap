@@ -12,7 +12,7 @@ How to Cite
 ------------
 If you use ``gsMap`` in your studies, please cite:
 
-   Liyang Song, Wenhao Chen, Junren Hou, Minmin Guo, Jian Yang (2024) Spatially resolved mapping of cells associated with human complex traits. (Under review)
+   Song, L., Chen, W., Hou, J., Guo, M. & Yang, J. Spatially resolved mapping of cells associated with human complex traits. medRxiv, 2024.2010.2031.24316538 (2024)
 
 Key Features
 ------------
