@@ -1037,7 +1037,7 @@ class CauchyCombinationConfig(ConfigWithAutoPaths):
 
     def __post_init__(self):
         if self.sample_name is not None:
-            if len(self.sample_name_list) > 0:
+            if self.sample_name_list and len(self.sample_name_list) > 0:
                 raise ValueError("Only one of sample_name and sample_name_list must be provided.")
             else:
                 self.sample_name_list = [self.sample_name]
@@ -1051,7 +1051,6 @@ class CauchyCombinationConfig(ConfigWithAutoPaths):
             assert self.output_file is not None, (
                 "Output_file must be provided if sample_name_list is provided."
             )
-
 
 @dataclass
 class VisualizeConfig(ConfigWithAutoPaths):
