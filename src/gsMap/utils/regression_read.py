@@ -88,38 +88,6 @@ def which_compression(fh):
     # -
     return suffix, compression
 
-
-def _read_ref_ld(ld_file):
-    suffix = ".l2.ldscore"
-    file = ld_file
-    first_fh = f"{file}1{suffix}"
-    s, compression = which_compression(first_fh)
-    #
-    ldscore_array = []
-    print(f"Reading ld score annotations from {file}[1-22]{suffix}.{compression}")
-
-    for chr in range(1, 23):
-        file_chr = f"{file}{chr}{suffix}{s}"
-        #
-        if compression == "parquet":
-            x = pd.read_parquet(file_chr)
-        elif compression == "feather":
-            x = pd.read_feather(file_chr)
-        else:
-            x = pd.read_csv(file_chr, compression=compression, sep="\t")
-
-        x = x.sort_values(by=["CHR", "BP"])  # SEs will be wrong unless sorted
-
-        columns_to_drop = ["MAF", "CM", "Gene", "TSS", "CHR", "BP"]
-        columns_to_drop = [col for col in columns_to_drop if col in x.columns]
-        x = x.drop(columns_to_drop, axis=1)
-
-        ldscore_array.append(x)
-    #
-    ref_ld = pd.concat(ldscore_array, axis=0)
-    return ref_ld
-
-
 def _read_ref_ld_v2(ld_file):
     suffix = ".l2.ldscore"
     file = ld_file
@@ -184,24 +152,6 @@ def M(fh, common=False):
     # -
     return np.array(M_array).reshape((1, len(M_array)))
 
-
-def _check_variance(M_annot, ref_ld):
-    """
-    Remove zero-variance LD Scores.
-    """
-    ii = ref_ld.iloc[:, 1:].var() == 0  # NB there is a SNP column here
-    if ii.all():
-        raise ValueError("All LD Scores have zero variance.")
-    else:
-        print("Removing partitioned LD Scores with zero variance.")
-        ii_snp = np.array([True] + list(~ii))
-        ii_m = np.array(~ii)
-        ref_ld = ref_ld.iloc[:, ii_snp]
-        M_annot = M_annot[:, ii_m]
-    # -
-    return M_annot, ref_ld, ii
-
-
 def _check_variance_v2(M_annot, ref_ld):
     ii = ref_ld.var() == 0
     if ii.all():
@@ -247,31 +197,3 @@ def _read_w_ld(w_file):
     w_ld.columns = ["SNP", "LD_weights"]
 
     return w_ld
-
-
-# Fun for merging
-def _merge_and_log(ld, sumstats, noun):
-    """
-    Wrap smart merge with log messages about # of SNPs.
-    """
-    sumstats = smart_merge(ld, sumstats)
-    msg = "After merging with {F}, {N} SNPs remain."
-    if len(sumstats) == 0:
-        raise ValueError(msg.format(N=len(sumstats), F=noun))
-    else:
-        print(msg.format(N=len(sumstats), F=noun))
-    # -
-    return sumstats
-
-
-def smart_merge(x, y):
-    """
-    Check if SNP columns are equal. If so, save time by using concat instead of merge.
-    """
-    if len(x) == len(y) and (x.index == y.index).all() and (x.SNP == y.SNP).all():
-        x = x.reset_index(drop=True)
-        y = y.reset_index(drop=True).drop("SNP", 1)
-        out = pd.concat([x, y], axis=1)
-    else:
-        out = pd.merge(x, y, how="inner", on="SNP")
-    return out

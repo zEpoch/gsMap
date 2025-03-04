@@ -1,42 +1,7 @@
-from pathlib import Path
-
 import bitarray as ba
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix, load_npz, save_npz
-from tqdm import tqdm, trange
-
-
-# Define the log class
-class Logger:
-    # -
-    def __init__(self, fh):
-        self.log_fh = open(fh, "w")
-
-    # -
-    def log(self, msg):
-        """
-        Print to log file and stdout.
-        """
-        print(msg, file=self.log_fh)
-        print(msg)
-
-    # -
-    def close(self):
-        self.log_fh.close()
-
-
-# Compute ld-score using cellular annotations
-def get_compression(fh):
-    """Which sort of compression should we use with read_csv?"""
-    if fh.endswith("gz"):
-        compression = "gzip"
-    elif fh.endswith("bz2"):
-        compression = "bz2"
-    else:
-        compression = None
-    # -
-    return compression
+from tqdm import tqdm
 
 
 # Define the reading functions
@@ -67,29 +32,14 @@ def ID_List_Factory(colnames, keepcol, fname_end, header=None, usecols=None):
             end = self.fname_end
             if end and not fname.endswith(end):
                 raise ValueError(f"{end} filename must end in {end}")
-            comp = get_compression(fname)
             self.df = pd.read_csv(
-                fname, header=self.header, usecols=self.usecols, sep=r"\s+", compression=comp
+                fname, header=self.header, usecols=self.usecols, sep=r"\s+",
             )
             if self.colnames:
                 self.df.columns = self.colnames
             if self.keepcol is not None:
                 self.IDList = self.df.iloc[:, [self.keepcol]].astype("object")
 
-        # -
-        def loj(self, externalDf):
-            """
-            Perform a left outer join operation with the given external DataFrame.
-            """
-            r = externalDf.columns[0]
-            l = self.IDList.columns[0]
-            merge_df = externalDf.iloc[:, [0]]
-            merge_df["keep"] = True
-            z = pd.merge(self.IDList, merge_df, how="left", left_on=l, right_on=r, sort=False)
-            ii = z["keep"]
-            return np.nonzero(ii)[0]
-
-    # -
     return IDContainer
 
 
@@ -288,12 +238,12 @@ class GenotypeArrayInMemory:
         rfuncBB = np.zeros((c, c))
         # chunk inside of block
         for l_B in np.arange(0, b, c):  # l_B := index of leftmost SNP in matrix B
-            B = A[:, l_B : l_B + c]
+            B = A[:, l_B: l_B + c]
             # ld matrix
             np.dot(A.T, B / n, out=rfuncAB)
             # ld matrix square
             rfuncAB = func(rfuncAB)
-            cor_sum[l_A : l_A + b, :] += np.dot(rfuncAB, annot[l_B : l_B + c, :])
+            cor_sum[l_A: l_A + b, :] += np.dot(rfuncAB, annot[l_B: l_B + c, :])
 
         # chunk to right of block
         b0 = b
@@ -309,10 +259,10 @@ class GenotypeArrayInMemory:
                 # block_size can't increase more than c
                 # block_size can't be less than c unless it is zero
                 # both of these things make sense
-                A = np.hstack((A[:, old_b - b + c : old_b], B))
+                A = np.hstack((A[:, old_b - b + c: old_b], B))
                 l_A += old_b - b + c
             elif l_B == b0 and b > 0:
-                A = A[:, b0 - b : b0]
+                A = A[:, b0 - b: b0]
                 l_A = b0 - b
             elif b == 0:  # no SNPs to left in window, e.g., after a sequence gap
                 A = np.array(()).reshape((n, 0))
@@ -325,18 +275,18 @@ class GenotypeArrayInMemory:
                 rfuncAB = np.zeros((b, c))
             # -
             B = snp_getter(c)
-            p1 = np.all(annot[l_A : l_A + b, :] == 0)
-            p2 = np.all(annot[l_B : l_B + c, :] == 0)
+            p1 = np.all(annot[l_A: l_A + b, :] == 0)
+            p2 = np.all(annot[l_B: l_B + c, :] == 0)
             if p1 and p2:
                 continue
             # -
             np.dot(A.T, B / n, out=rfuncAB)
             rfuncAB = func(rfuncAB)
-            cor_sum[l_A : l_A + b, :] += np.dot(rfuncAB, annot[l_B : l_B + c, :])
-            cor_sum[l_B : l_B + c, :] += np.dot(annot[l_A : l_A + b, :].T, rfuncAB).T
+            cor_sum[l_A: l_A + b, :] += np.dot(rfuncAB, annot[l_B: l_B + c, :])
+            cor_sum[l_B: l_B + c, :] += np.dot(annot[l_A: l_A + b, :].T, rfuncAB).T
             np.dot(B.T, B / n, out=rfuncBB)
             rfuncBB = func(rfuncBB)
-            cor_sum[l_B : l_B + c, :] += np.dot(rfuncBB, annot[l_B : l_B + c, :])
+            cor_sum[l_B: l_B + c, :] += np.dot(rfuncBB, annot[l_B: l_B + c, :])
         # -
         return cor_sum
 
@@ -400,8 +350,8 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         z = ba.bitarray(m * 2 * nru_new, endian="little")
         z.setall(0)
         for e, i in enumerate(keep_indivs):
-            z[2 * e :: 2 * nru_new] = geno[2 * i :: 2 * nru]
-            z[2 * e + 1 :: 2 * nru_new] = geno[2 * i + 1 :: 2 * nru]
+            z[2 * e:: 2 * nru_new] = geno[2 * i:: 2 * nru]
+            z[2 * e + 1:: 2 * nru_new] = geno[2 * i + 1:: 2 * nru]
         self.nru = nru_new
         return (z, m, n_new)
 
@@ -435,7 +385,7 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         kept_snps = []
         freq = []
         for e, j in enumerate(keep_snps):
-            z = geno[2 * nru * j : 2 * nru * (j + 1)]
+            z = geno[2 * nru * j: 2 * nru * (j + 1)]
             A = z[0::2]
             a = A.count()
             B = z[1::2]
@@ -489,7 +439,7 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         c = self._currentSNP
         n = self.n
         nru = self.nru
-        slice = self.geno[2 * c * nru : 2 * (c + b) * nru]
+        slice = self.geno[2 * c * nru: 2 * (c + b) * nru]
         X = np.array(slice.decode(self._bedcode), dtype="float64").reshape((b, nru)).T
         X = X[0:n, :]
         Y = np.zeros(X.shape)
@@ -512,257 +462,25 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         return Y
 
 
-class PlinkBEDFileWithR2Cache(PlinkBEDFile):
-    def compute_r2_cache(
-        self,
-        block_left,
-        output_cache_file_dir: Path,
-        chunk_size=500_000_000,
-        c=500,
-        r2_threshold=1e-4,
-        annot=None,
-    ):
-        func = np.square
-        snp_getter = self.nextSNPs
-        data, rows, cols = [], [], []
-
-        def add_rfuncAB(rfuncAB, l_A, l_B):
-            non_zero_indices = np.nonzero(rfuncAB > r2_threshold)
-            data.extend(rfuncAB[non_zero_indices])
-            rows.extend(l_A + non_zero_indices[0])
-            cols.extend(l_B + non_zero_indices[1])
-
-        # def add_rfuncAB(rfuncAB, l_A, l_B):
-        #     # not need select non zero indices
-        #     data.extend(rfuncAB.flatten())
-        #     rows.extend(l_A + np.repeat(np.arange(rfuncAB.shape[0]), rfuncAB.shape[1]))
-        #     cols.extend(l_B + np.tile(np.arange(rfuncAB.shape[1]), rfuncAB.shape[0]))
-
-        # def add_rfuncBB(rfuncBB, l_B):
-        #     non_zero_indices = np.nonzero(rfuncBB)
-        #     data.extend(rfuncBB[non_zero_indices])
-        #     rows.extend(l_B + non_zero_indices[0])
-        #     cols.extend(l_B + non_zero_indices[1])
-
-        def add_rfuncBB(rfuncBB, l_B):
-            non_zero_indices = np.nonzero(rfuncBB > r2_threshold)
-            data.extend(rfuncBB[non_zero_indices])
-            rows.extend(l_B + non_zero_indices[0])
-            cols.extend(l_B + non_zero_indices[1])
-            if len(data) > chunk_size:
-                # save the cache
-                print(f"Start saving the cache file: {output_cache_file_dir / f'{l_B}.npz'}")
-                r2_sparse_matrix = csr_matrix(
-                    (data, (rows, cols)), shape=(self.m, self.m), dtype="float16"
-                )
-                save_npz(output_cache_file_dir / f"{l_B}.npz", r2_sparse_matrix)
-                # reset the data
-                data.clear()
-                rows.clear()
-                cols.clear()
-
-        m, n = self.m, self.n
-        block_sizes = np.array(np.arange(m) - block_left)
-        block_sizes = np.ceil(block_sizes / c) * c
-        if annot is None:
-            annot = np.ones((m, 1))
-        else:
-            annot_m = annot.shape[0]
-            if annot_m != self.m:
-                raise ValueError("Incorrect number of SNPs in annot")
-        # -
-        # n_a = annot.shape[1]  # number of annotations
-        # cor_sum = np.zeros((m, n_a))
-        # b = index of first SNP for which SNP 0 is not included in LD Score
-        b = np.nonzero(block_left > 0)
-        if np.any(b):
-            b = b[0][0]
-        else:
-            b = m
-        b = int(np.ceil(b / c) * c)  # round up to a multiple of c
-        if b > m:
-            c = 1
-            b = m
-
-        l_A = 0  # l_A := index of leftmost SNP in matrix A
-        A = snp_getter(b)
-        rfuncAB = np.zeros((b, c))
-        rfuncBB = np.zeros((c, c))
-        # chunk inside of block
-        for l_B in np.arange(0, b, c):  # l_B := index of leftmost SNP in matrix B
-            B = A[:, l_B : l_B + c]
-            # ld matrix
-            np.dot(A.T, B / n, out=rfuncAB)
-            # ld matrix square
-            rfuncAB = func(rfuncAB)
-            add_rfuncAB(rfuncAB, l_A, l_B)
-            # cor_sum[l_A:l_A + b, :] += np.dot(rfuncAB, annot[l_B:l_B + c, :])
-
-        # chunk to right of block
-        b0 = b
-        md = int(c * np.floor(m / c))
-        end = md + 1 if md != m else md
-        for l_B in trange(b0, end, c, desc=f"Compute r2 cache for {output_cache_file_dir.name}"):
-            # check if the annot matrix is all zeros for this block + chunk
-            # this happens w/ sparse categories (i.e., pathways)
-            # update the block
-            old_b = b
-            b = int(block_sizes[l_B])
-            if l_B > b0 and b > 0:
-                # block_size can't increase more than c
-                # block_size can't be less than c unless it is zero
-                # both of these things make sense
-                A = np.hstack((A[:, old_b - b + c : old_b], B))
-                l_A += old_b - b + c
-            elif l_B == b0 and b > 0:
-                A = A[:, b0 - b : b0]
-                l_A = b0 - b
-            elif b == 0:  # no SNPs to left in window, e.g., after a sequence gap
-                A = np.array(()).reshape((n, 0))
-                l_A = l_B
-            if l_B == md:
-                c = m - md
-                rfuncAB = np.zeros((b, c))
-                rfuncBB = np.zeros((c, c))
-            if b != old_b:
-                rfuncAB = np.zeros((b, c))
-            # -
-            B = snp_getter(c)
-            p1 = np.all(annot[l_A : l_A + b, :] == 0)
-            p2 = np.all(annot[l_B : l_B + c, :] == 0)
-            if p1 and p2:
-                continue
-            # -
-            np.dot(A.T, B / n, out=rfuncAB)
-            rfuncAB = func(rfuncAB)
-            # cor_sum[l_A:l_A + b, :] += np.dot(rfuncAB, annot[l_B:l_B + c, :])
-            # cor_sum[l_B:l_B + c, :] += np.dot(annot[l_A:l_A + b, :].T, rfuncAB).T
-            add_rfuncAB(rfuncAB, l_A, l_B)
-            add_rfuncAB(rfuncAB.T, l_B, l_A)
-            np.dot(B.T, B / n, out=rfuncBB)
-            rfuncBB = func(rfuncBB)
-            # cor_sum[l_B:l_B + c, :] += np.dot(rfuncBB, annot[l_B:l_B + c, :])
-            add_rfuncBB(rfuncBB, l_B)
-        if len(data) > 0:
-            # save remaining data
-            # save the cache
-            print(f"Start saving the cache file: {output_cache_file_dir / f'{l_B}.npz'}")
-            r2_sparse_matrix = csr_matrix((data, (rows, cols)), shape=(m, m), dtype="float16")
-            save_npz(output_cache_file_dir / f"{l_B}.npz", r2_sparse_matrix)
-        # combine the cache files
-        print(f"Start combining the cache files in {output_cache_file_dir}")
-        cached_r2_matrix_files = list(output_cache_file_dir.glob("*.npz"))
-        combined_r2_matrix_files = self.load_r2_matrix_from_cache_files(output_cache_file_dir)
-        # remove the cache files
-        for cached_r2_matrix_file in cached_r2_matrix_files:
-            cached_r2_matrix_file.unlink()
-        # save the combined r2 matrix
-        print(f"Start saving the combined r2 matrix in {output_cache_file_dir}")
-        combined_r2_matrix_file = output_cache_file_dir / "combined_r2_matrix.npz"
-        save_npz(combined_r2_matrix_file, combined_r2_matrix_files)
-
-    def get_ldscore_using_r2_cache(self, annot_matrix, cached_r2_matrix_dir):
-        """
-        Compute the r2 matrix multiplication with annot_matrix
-        """
-        # Compute the r2 matrix multiplication with annot_matrix
-        cached_r2_matrix_dir = Path(cached_r2_matrix_dir)
-        # iter the cached r2 matrix files
-        result_matrix = np.zeros((self.m, annot_matrix.shape[1]))
-        cached_r2_matrix_files = list(cached_r2_matrix_dir.glob("*.npz"))
-        assert len(cached_r2_matrix_files) > 0, (
-            f"No cached r2 matrix files in {cached_r2_matrix_dir}"
-            f"Please run the function compute_r2_cache first!"
-        )
-        for r2_matrix_file in tqdm(
-            cached_r2_matrix_files, desc=f"Compute ld score for {cached_r2_matrix_dir.name}"
-        ):
-            print(f"Compute r2 matrix multiplication for {r2_matrix_file}")
-            r2_matrix = load_npz(r2_matrix_file)
-            result_matrix += r2_matrix.dot(annot_matrix)
-        return result_matrix
-
-    def load_r2_matrix_from_cache_files(self, cached_r2_matrix_dir):
-        """
-        Load the r2 matrix from cache
-        """
-        cached_r2_matrix_dir = Path(cached_r2_matrix_dir)
-        # iter the cached r2 matrix files
-        cached_r2_matrix_files = list(cached_r2_matrix_dir.glob("*.npz"))
-        assert len(cached_r2_matrix_files) > 0, (
-            f"No cached r2 matrix files in {cached_r2_matrix_dir}"
-            f"Please run the function compute_r2_cache first!"
-        )
-        # load the r2 matrix
-        r2_matrix = load_npz(cached_r2_matrix_files[0])
-        for r2_matrix_file in tqdm(
-            cached_r2_matrix_files[1:], desc=f"Load r2 matrix from {cached_r2_matrix_dir.name}"
-        ):
-            print(f"Load r2 matrix from {r2_matrix_file}")
-            r2_matrix += load_npz(r2_matrix_file)
-        # to float16
-        r2_matrix = r2_matrix.astype("float16")
-        return r2_matrix
-
-    def load_combined_r2_matrix(self, cached_r2_matrix_dir):
-        """
-        Load the combined r2 matrix
-        """
-        combined_r2_matrix_file = Path(cached_r2_matrix_dir) / "combined_r2_matrix.npz"
-        assert combined_r2_matrix_file.exists(), (
-            f"No combined r2 matrix file in {cached_r2_matrix_dir}"
-            f"Should delete the cache files and run the function compute_r2_cache first!"
-        )
-        # load the r2 matrix
-        r2_matrix = load_npz(combined_r2_matrix_file)
-        # to float16
-        r2_matrix = r2_matrix.astype("float16")
-        return r2_matrix
-
-
 def load_bfile(bfile_chr_prefix):
     PlinkBIMFile = ID_List_Factory(
         ["CHR", "SNP", "CM", "BP", "A1", "A2"], 1, ".bim", usecols=[0, 1, 2, 3, 4, 5]
     )
     PlinkFAMFile = ID_List_Factory(["IID"], 0, ".fam", usecols=[1])
 
-    snp_file, snp_obj = bfile_chr_prefix + ".bim", PlinkBIMFile
-    array_snps = snp_obj(snp_file)
-    m = len(array_snps.IDList)
-    print(f"Read list of {m} SNPs from {snp_file}")
-    #
+    snp_file = bfile_chr_prefix + ".bim"
+    array_snps = PlinkBIMFile(snp_file)
+
     # Load fam
-    ind_file, ind_obj = bfile_chr_prefix + ".fam", PlinkFAMFile
-    array_indivs = ind_obj(ind_file)
+    ind_file = bfile_chr_prefix + ".fam"
+    array_indivs = PlinkFAMFile(ind_file)
+
     n = len(array_indivs.IDList)
-    print(f"Read list of {n} individuals from {ind_file}")
 
     # Load genotype array
-    array_file, array_obj = bfile_chr_prefix + ".bed", PlinkBEDFileWithR2Cache
-    geno_array = array_obj(
+    array_file = bfile_chr_prefix + ".bed"
+    geno_array = PlinkBEDFile(
         array_file, n, array_snps, keep_snps=None, keep_indivs=None, mafMin=None
     )
 
     return array_snps, array_indivs, geno_array
-
-
-def generate_r2_matrix_chr_cache(bfile_chr_prefix, ld_wind_cm, output_cache_file_dir):
-    # Load genotype array
-    array_snps, array_indivs, geno_array = load_bfile(bfile_chr_prefix)
-    # Compute block lefts
-    # block_left = getBlockLefts(geno_array.df[:, 3], ld_wind_cm)
-    # Compute LD score
-    # r2_matrix = geno_array.load_r2_matrix_from_cache(output_cache_file_dir)
-
-
-def generate_r2_matrix_cache(bfile_prefix, chromosome_list, r2_cache_dir, ld_wind_cm=1):
-    r2_cache_dir = Path(r2_cache_dir)
-
-    for chr in chromosome_list:
-        output_cache_file_prefix = r2_cache_dir / f"chr{chr}"
-        output_cache_file_prefix.mkdir(parents=True, exist_ok=True)
-        bfile_chr_prefix = bfile_prefix + "." + str(chr)
-        generate_r2_matrix_chr_cache(
-            bfile_chr_prefix, ld_wind_cm=ld_wind_cm, output_cache_file_dir=output_cache_file_prefix
-        )
-        print(f"Compute r2 matrix for chr{chr} done!")

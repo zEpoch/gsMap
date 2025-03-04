@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix
 from tqdm import trange
 
 from gsMap.config import GenerateLDScoreConfig
-from gsMap.utils.generate_r2_matrix import ID_List_Factory, PlinkBEDFileWithR2Cache, getBlockLefts
+from gsMap.utils.generate_r2_matrix import getBlockLefts, load_bfile
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 logger = logging.getLogger(__name__)
@@ -71,9 +71,7 @@ def load_marker_score(mk_score_file):
     return mk_score
 
 
-# %%
-# load mkscore get common gene
-# %%
+
 # load bim
 def load_bim(bfile_root, chrom):
     """
@@ -146,52 +144,21 @@ def get_snp_pass_maf(bfile_root, chrom, maf_min=0.05):
     """
     Get the dummy matrix of SNP-gene pairs.
     """
-    # Load the bim file
-    PlinkBIMFile = ID_List_Factory(
-        ["CHR", "SNP", "CM", "BP", "A1", "A2"], 1, ".bim", usecols=[0, 1, 2, 3, 4, 5]
-    )
-    PlinkFAMFile = ID_List_Factory(["IID"], 0, ".fam", usecols=[1])
+    array_snps, array_indivs, geno_array = load_bfile( bfile_chr_prefix = f"{bfile_root}.{chrom}")
 
-    bfile = f"{bfile_root}.{chrom}"
-    snp_file, snp_obj = bfile + ".bim", PlinkBIMFile
-    array_snps = snp_obj(snp_file)
-    # m = len(array_snps.IDList)
-
-    # Load fam
-    ind_file, ind_obj = bfile + ".fam", PlinkFAMFile
-    array_indivs = ind_obj(ind_file)
+    m = len(array_snps.IDList)
     n = len(array_indivs.IDList)
-    array_file, array_obj = bfile + ".bed", PlinkBEDFileWithR2Cache
-    geno_array = array_obj(
-        array_file, n, array_snps, keep_snps=None, keep_indivs=None, mafMin=None
-    )
+    logger.info(f"Loading genotype data for {m} SNPs and {n} individuals from {bfile_root}.{chrom}")
+
     ii = geno_array.maf > maf_min
     snp_pass_maf = array_snps.IDList[ii]
-    print(f"After filtering SNPs with MAF < {maf_min}, {len(snp_pass_maf)} SNPs remain.")
+    logger.info(f"After filtering SNPs with MAF < {maf_min}, {len(snp_pass_maf)} SNPs remain.")
     return snp_pass_maf.SNP.to_list()
 
 
 def get_ldscore(bfile_root, chrom, annot_matrix, ld_wind, ld_unit="CM"):
-    PlinkBIMFile = ID_List_Factory(
-        ["CHR", "SNP", "CM", "BP", "A1", "A2"], 1, ".bim", usecols=[0, 1, 2, 3, 4, 5]
-    )
-    PlinkFAMFile = ID_List_Factory(["IID"], 0, ".fam", usecols=[1])
+    array_snps, array_indivs, geno_array = load_bfile(bfile_chr_prefix=f"{bfile_root}.{chrom}")
 
-    bfile = f"{bfile_root}.{chrom}"
-    snp_file, snp_obj = bfile + ".bim", PlinkBIMFile
-    array_snps = snp_obj(snp_file)
-    m = len(array_snps.IDList)
-    print(f"Read list of {m} SNPs from {snp_file}")
-
-    # Load fam
-    ind_file, ind_obj = bfile + ".fam", PlinkFAMFile
-    array_indivs = ind_obj(ind_file)
-    n = len(array_indivs.IDList)
-    print(f"Read list of {n} individuals from {ind_file}")
-    array_file, array_obj = bfile + ".bed", PlinkBEDFileWithR2Cache
-    geno_array = array_obj(
-        array_file, n, array_snps, keep_snps=None, keep_indivs=None, mafMin=None
-    )
     # Load the annotations of the baseline
     if ld_unit == "SNP":
         max_dist = ld_wind
