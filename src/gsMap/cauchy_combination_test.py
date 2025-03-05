@@ -118,7 +118,7 @@ def run_Cauchy_combination(config: CauchyCombinationConfig):
         n_removed = len(p_values) - len(p_values_filtered)
 
         # Remove outliers if the number is reasonable
-        if 0 < n_removed < 20:
+        if 0 < n_removed < max(len(p_values)*0.01,20):
             logger.info(f"Removed {n_removed}/{len(p_values)} outliers (median + 3IQR) for {ct}.")
             p_cauchy_temp = acat_test(p_values_filtered)
         else:
