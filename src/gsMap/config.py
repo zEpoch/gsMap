@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from pprint import pprint
-from typing import Literal
+from typing import Literal, Union
 
 import pyfiglet
 import yaml
@@ -61,6 +61,13 @@ def register_cli(name: str, description: str, add_args_function: Callable) -> Ca
     return decorator
 
 
+def str_or_float(value):
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+    
 def add_shared_args(parser):
     parser.add_argument(
         "--workdir", type=str, required=True, help="Path to the working directory."
@@ -429,7 +436,7 @@ def add_format_sumstats_args(parser):
     parser.add_argument(
         "--n",
         default=None,
-        type=str,
+        type=str_or_float,
         help="Name of sample size column (if not a name that gsMap understands)",
     )
     parser.add_argument(
@@ -1190,7 +1197,7 @@ class FormatSumstatsConfig:
     se: str = None
     p: str = None
     frq: str = None
-    n: str = None
+    n: Union[str, int] = None
     z: str = None
     OR: str = None
     se_OR: str = None
