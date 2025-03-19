@@ -38,7 +38,7 @@ def preprocess_data(adata, params):
 
     if params.data_layer in adata.layers.keys():
         logger.info(f"Using data layer: {params.data_layer}...")
-        adata.X = adata.layers[params.data_layer]
+        adata.X = adata.layers[params.data_layer].copy()
     elif params.data_layer == "X":
         logger.info(f"Using data layer: {params.data_layer}...")
         if adata.X.dtype == "float32" or adata.X.dtype == "float64":
