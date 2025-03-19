@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import zarr
-from scipy.stats import rankdata
+from scipy.stats import rankdata, gmean
 from tqdm import tqdm
-
+import scipy
 from gsMap.config import CreateSliceMeanConfig
 
 # %% Helper functions
@@ -62,22 +62,27 @@ def calculate_one_slice_mean(
 
     adata = adata[:, common_genes].copy()
     n_cells = adata.shape[0]
-    log_ranks = np.zeros((n_cells, adata.n_vars), dtype=np.float32)
-    # Compute log of ranks to avoid overflow when computing geometric mean
-    for i in tqdm(range(n_cells), desc=f"Computing log ranks for {sample_name}"):
-        data = adata.X[i, :].toarray().flatten()
-        ranks = rankdata(data, method="average")
-        log_ranks[i, :] = np.log(ranks)  # Adding small value to avoid log(0)
 
-    # Calculate geometric mean via log trick: exp(mean(log(values)))
-    gmean = (np.exp(np.mean(log_ranks, axis=0))).reshape(-1, 1)
+    if not scipy.sparse.issparse(adata.X):
+        adata_X = scipy.sparse.csr_matrix(adata.X)
+    elif isinstance(adata.X, scipy.sparse.csr_matrix):
+        adata_X = adata.X  # Avoid copying if already CSR
+    else:
+        adata_X = adata.X.tocsr()
+
+    ranks = np.zeros((n_cells, adata.n_vars), dtype=np.float16)
+    for i in tqdm(range(n_cells), desc="Computing ranks per cell"):
+        data = adata_X[i, :].toarray().flatten()
+        ranks[i, :] = rankdata(data, method="average")
+
+    gM  = gmean(ranks, axis=0)
 
     # Calculate the expression fractio
     adata_X_bool = adata.X.astype(bool)
     frac = (np.asarray(adata_X_bool.sum(axis=0)).flatten()).reshape(-1, 1)
 
     # Save to zarr group
-    gmean_frac = np.concatenate([gmean, frac], axis=1)
+    gmean_frac = np.concatenate([gM, frac], axis=1)
     s1_zarr = gmean_zarr_group.array(sample_name, data=gmean_frac, chunks=None, dtype="f4")
     s1_zarr.attrs["spot_number"] = adata.shape[0]
 
@@ -85,38 +90,45 @@ def calculate_one_slice_mean(
 def merge_zarr_means(zarr_group_path, output_file, common_genes):
     """
     Merge all Zarr arrays into a weighted geometric mean and save to a Parquet file.
-    Instead of calculating the mean, it sums the logs and applies the exponential.
     """
     gmean_zarr_group = zarr.open(zarr_group_path, mode="a")
-    log_sum = None
+
+    sample_gmeans = []
+    sample_weights = []
     frac_sum = None
     total_spot_number = 0
+
+    # Collect all geometric means and their weights (spot numbers)
     for key in tqdm(gmean_zarr_group.array_keys(), desc="Merging Zarr arrays"):
         s1 = gmean_zarr_group[key]
         s1_array_gmean = s1[:][:, 0]
         s1_array_frac = s1[:][:, 1]
         n = s1.attrs["spot_number"]
 
-        if log_sum is None:
-            log_sum = np.log(s1_array_gmean) * n
+        sample_gmeans.append(s1_array_gmean)
+        sample_weights.append(n)
+
+        if frac_sum is None:
             frac_sum = s1_array_frac
         else:
-            log_sum += np.log(s1_array_gmean) * n
             frac_sum += s1_array_frac
 
         total_spot_number += n
 
-    # Apply the geometric mean via exponentiation of the averaged logs
-    final_mean = np.exp(log_sum / total_spot_number)
+    # Convert to arrays
+    sample_gmeans = np.array(sample_gmeans)
+    sample_weights = np.array(sample_weights)
+
+    final_gmean = gmean(sample_gmeans, axis=0, weights=sample_weights)
+
     final_frac = frac_sum / total_spot_number
 
     # Save the final mean to a Parquet file
     gene_names = common_genes
-    final_df = pd.DataFrame({"gene": gene_names, "G_Mean": final_mean, "frac": final_frac})
+    final_df = pd.DataFrame({"gene": gene_names, "G_Mean": final_gmean, "frac": final_frac})
     final_df.set_index("gene", inplace=True)
     final_df.to_parquet(output_file)
     return final_df
-
 
 def run_create_slice_mean(config: CreateSliceMeanConfig):
     """
