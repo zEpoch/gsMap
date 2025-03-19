@@ -9,10 +9,10 @@ import pandas as pd
 import pytest
 
 from gsMap.main import main
-from gsMap.config import RunAllModeConfig
 
 
 def parse_bash_command(command: str) -> list[str]:
+    """Convert multi-line bash command to argument list for sys.argv"""
     cleaned_command = command.replace("\\\n", " ")
     cleaned_command = " ".join(cleaned_command.splitlines())
     cleaned_command = " ".join(cleaned_command.split())
@@ -20,43 +20,14 @@ def parse_bash_command(command: str) -> list[str]:
 
 
 @pytest.mark.real_data
-def test_conditional_analysis(example_data_dir, resource_dir, work_dir):
+def test_conditional_analysis(conditional_config, additional_baseline_dir):
     """Test the conditional analysis functionality by providing additional baseline annotations"""
     logger = logging.getLogger("test_conditional_analysis")
+    config = conditional_config
 
-    # Setup base configuration using RunAllModeConfig
-    sample_name = "conditional_analysis_test"
-    hdf5_path = example_data_dir / "ST/E16.5_E1S1.MOSTA.h5ad"
-    trait_name = "IQ"
-    sumstats_file = example_data_dir / "GWAS/IQ_NG_2018.sumstats.gz"
-    homolog_file = resource_dir / "homologs/mouse_human_homologs.txt"
-
-    config = RunAllModeConfig(
-        workdir=work_dir,
-        sample_name=sample_name,
-        annotation="annotation",
-        data_layer="count",
-        homolog_file=str(homolog_file),
-        hdf5_path=str(hdf5_path),
-        trait_name=trait_name,
-        sumstats_file=str(sumstats_file),
-        max_processes=4,
-        gsMap_resource_dir=resource_dir
-    )
-
-    # Download and prepare additional baseline annotations
-    additional_annotation_dir = work_dir / "additional_annotation"
-    additional_annotation_dir.mkdir(parents=True, exist_ok=True)
-
-    download_cmd = f"""
-    wget -O {additional_annotation_dir}/gsMap_additional_annotation.tar.gz https://yanglab.westlake.edu.cn/data/gsMap/gsMap_additional_annotation.tar.gz
-    tar -xzf {additional_annotation_dir}/gsMap_additional_annotation.tar.gz -C {additional_annotation_dir}
-    """
-    subprocess.run(download_cmd, shell=True, check=True)
-
-    # Verify the downloaded files exist
+    # Verify the additional baseline annotation files exist
     for chrom in range(1, 23):
-        baseline_file = additional_annotation_dir / f"baseline.{chrom}.annot.gz"
+        baseline_file = additional_baseline_dir / f"baseline.{chrom}.annot.gz"
         assert baseline_file.exists(), f"Additional baseline annotation file {baseline_file} not found"
 
     # Step 1: Find latent representations
@@ -93,20 +64,21 @@ def test_conditional_analysis(example_data_dir, resource_dir, work_dir):
     gsmap run_generate_ldscore \
         --workdir '{config.workdir}' \
         --sample_name {config.sample_name} \
-        --chrom 22 \
+        --chrom all \
         --bfile_root '{config.bfile_root}' \
         --keep_snp_root '{config.keep_snp_root}' \
         --gtf_annotation_file '{config.gtffile}' \
         --gene_window_size 50000 \
-        --additional_baseline_annotation '{additional_annotation_dir}'
+        --additional_baseline_annotation '{additional_baseline_dir}'
     """
     with patch.object(sys, "argv", parse_bash_command(command)):
         main()
 
     # Verify additional baseline annotation directory was created
-    additional_baseline_dir = Path(config.workdir) / config.sample_name / "generate_ldscore" / "additional_baseline"
-    assert additional_baseline_dir.exists(), "Additional baseline directory was not created"
-    ldscore_file = additional_baseline_dir / f"baseline.22.l2.ldscore.feather"
+    additional_baseline_dir_output = Path(
+        config.workdir) / config.sample_name / "generate_ldscore" / "additional_baseline"
+    assert additional_baseline_dir_output.exists(), "Additional baseline directory was not created"
+    ldscore_file = additional_baseline_dir_output / f"baseline.22.l2.ldscore.feather"
     assert ldscore_file.exists(), "Additional baseline LDScore file was not created"
 
     # Step 4: Run spatial LDSC using the additional baseline annotation
@@ -132,55 +104,23 @@ def test_conditional_analysis(example_data_dir, resource_dir, work_dir):
 
 
 @pytest.mark.real_data
-def test_biological_replicates(example_data_dir, resource_dir, work_dir):
+def test_biological_replicates(biorep_config1, biorep_config2, work_dir):
     """Test gsMap on biological replicates using the slice mean functionality"""
     logger = logging.getLogger("test_biological_replicates")
+    config1 = biorep_config1
+    config2 = biorep_config2
 
-    # Setup parameters for both samples
-    sample1_name = "bio_rep_test_1"
-    sample2_name = "bio_rep_test_2"
     slice_mean_file = work_dir / "slice_mean_test.parquet"
-    h5ad_file = example_data_dir / "ST" / "E16.5_E1S1.MOSTA.h5ad"
-    homolog_file = resource_dir / "homologs/mouse_human_homologs.txt"
-    trait_name = "IQ"
-    sumstats_file = example_data_dir / "GWAS/IQ_NG_2018.sumstats.gz"
-
-    # Create base configs for both samples
-    config1 = RunAllModeConfig(
-        workdir=work_dir,
-        sample_name=sample1_name,
-        annotation="annotation",
-        data_layer="count",
-        homolog_file=str(homolog_file),
-        hdf5_path=str(h5ad_file),
-        trait_name=trait_name,
-        sumstats_file=str(sumstats_file),
-        max_processes=4,
-        gsMap_resource_dir=resource_dir
-    )
-
-    config2 = RunAllModeConfig(
-        workdir=work_dir,
-        sample_name=sample2_name,
-        annotation="annotation",
-        data_layer="count",
-        homolog_file=str(homolog_file),
-        hdf5_path=str(h5ad_file),
-        trait_name=trait_name,
-        sumstats_file=str(sumstats_file),
-        max_processes=4,
-        gsMap_resource_dir=resource_dir
-    )
 
     # Step 1: Create the slice mean from multiple samples
     logger.info("Step 1: Creating slice mean from multiple samples")
     command = f"""
     gsmap create_slice_mean \
-        --sample_name_list {sample1_name} {sample2_name} \
-        --h5ad_list {h5ad_file} {h5ad_file} \
+        --sample_name_list {config1.sample_name} {config2.sample_name} \
+        --h5ad_list {config1.hdf5_path} {config2.hdf5_path} \
         --slice_mean_output_file {slice_mean_file} \
         --data_layer '{config1.data_layer}' \
-        --homolog_file '{homolog_file}'
+        --homolog_file '{config1.homolog_file}'
     """
     with patch.object(sys, "argv", parse_bash_command(command)):
         main()
@@ -194,9 +134,8 @@ def test_biological_replicates(example_data_dir, resource_dir, work_dir):
     assert 'frac' in slice_mean_df.columns, "frac column not found in slice mean file"
     assert len(slice_mean_df) > 0, "Slice mean file is empty"
 
-    # Update configs with slice mean file
+    # Update config with slice mean file
     config1.gM_slices = str(slice_mean_file)
-    config2.gM_slices = str(slice_mean_file)
 
     # Step 2: Test using the slice mean with quick_mode
     logger.info("Step 2: Using slice mean with quick_mode")
@@ -220,7 +159,7 @@ def test_biological_replicates(example_data_dir, resource_dir, work_dir):
     mkscore_file = config1.mkscore_feather_path
     assert mkscore_file.exists(), "Marker score file was not created in quick_mode"
 
-    # Step 5: Run Cauchy combination across multiple samples
+    # Step 3: Run Cauchy combination across multiple samples
     combined_result_file = work_dir / "combined_IQ_cauchy.csv.gz"
     command = f"""
     gsmap run_cauchy_combination \
@@ -240,29 +179,10 @@ def test_biological_replicates(example_data_dir, resource_dir, work_dir):
 
 
 @pytest.mark.real_data
-def test_customized_latent_representations(example_data_dir, resource_dir, work_dir):
+def test_customized_latent_representations(customlatent_config):
     """Test using customized latent representations in gsMap"""
     logger = logging.getLogger("test_customized_latent")
-
-    # Setup base configuration
-    sample_name = "custom_latent_test"
-    h5ad_file = example_data_dir / "ST/E16.5_E1S1.MOSTA.h5ad"
-    trait_name = "IQ"
-    sumstats_file = example_data_dir / "GWAS/IQ_NG_2018.sumstats.gz"
-    homolog_file = resource_dir / "homologs/mouse_human_homologs.txt"
-
-    config = RunAllModeConfig(
-        workdir=work_dir,
-        sample_name=sample_name,
-        annotation="annotation",
-        data_layer="count",
-        homolog_file=str(homolog_file),
-        hdf5_path=str(h5ad_file),
-        trait_name=trait_name,
-        sumstats_file=str(sumstats_file),
-        max_processes=4,
-        gsMap_resource_dir=resource_dir
-    )
+    config = customlatent_config
 
     # Step 1: First run find_latent_representations to create the h5ad with latent
     logger.info("Step 1: Creating initial latent representations")
