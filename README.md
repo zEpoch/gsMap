@@ -55,7 +55,7 @@ please refer to [gsMap Visualization](https://yanglab.westlake.edu.cn/gsmap/visu
 ## Citation
 
 Song, L., Chen, W., Hou, J., Guo, M. & Yang, J.
-[Spatially reso lved mapping of cells associated with human complex traits.](https://www.medrxiv.org/content/10.1101/2024.10.31.24316538v1)
-medRxiv, 2024.2010.2031.24316538 (2024).
+[Spatially reso lved mapping of cells associated with human complex traits.](https://doi.org/10.1038/s41586-025-08757-x)
+Nature (2025).
 
 Please cite the paper and give us a STAR if you find gsMap useful for your research.
