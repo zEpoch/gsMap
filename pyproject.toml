@@ -65,6 +65,12 @@ doc = [
     'nbsphinx',
 ]
 
+tests = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "coverage",
+]
+
 [project.urls]
 Home = "https://github.com/LeonSong1995/gsMap"
 Documentation = "https://yanglab.westlake.edu.cn/gsmap/document/software"
