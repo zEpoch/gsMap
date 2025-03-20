@@ -168,7 +168,7 @@ def run_latent_to_gene(config: LatentToGeneConfig):
             homologs.columns = [config.species, "HUMAN_GENE_SYM"]
             homologs.set_index(config.species, inplace=True)
 
-            original_gene_names = adata.var_names.copy()
+            # original_gene_names = adata.var_names.copy()
 
             # Filter genes present in homolog file
             adata = adata[:, adata.var_names.isin(homologs.index)]
@@ -178,8 +178,7 @@ def run_latent_to_gene(config: LatentToGeneConfig):
 
             # Create mapping table of original to human gene names
             gene_mapping = pd.Series(
-                homologs.loc[adata.var_names, "HUMAN_GENE_SYM"].values,
-                index=adata.var_names
+                homologs.loc[adata.var_names, "HUMAN_GENE_SYM"].values, index=adata.var_names
             )
 
             # Store original species gene names in var dataframe with the suffixed column name

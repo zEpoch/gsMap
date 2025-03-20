@@ -5,10 +5,11 @@ import anndata
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import zarr
-from scipy.stats import rankdata, gmean
-from tqdm import tqdm
 import scipy
+import zarr
+from scipy.stats import gmean, rankdata
+from tqdm import tqdm
+
 from gsMap.config import CreateSliceMeanConfig
 
 # %% Helper functions
@@ -75,7 +76,7 @@ def calculate_one_slice_mean(
         data = adata_X[i, :].toarray().flatten()
         ranks[i, :] = rankdata(data, method="average")
 
-    gM  = gmean(ranks, axis=0).reshape(-1, 1)
+    gM = gmean(ranks, axis=0).reshape(-1, 1)
 
     # Calculate the expression fractio
     adata_X_bool = adata.X.astype(bool)
@@ -129,6 +130,7 @@ def merge_zarr_means(zarr_group_path, output_file, common_genes):
     final_df.set_index("gene", inplace=True)
     final_df.to_parquet(output_file)
     return final_df
+
 
 def run_create_slice_mean(config: CreateSliceMeanConfig):
     """

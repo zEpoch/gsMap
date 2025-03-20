@@ -1,21 +1,19 @@
 import argparse
 import dataclasses
 import logging
+import os
 import sys
+import threading
+import time
 from collections import OrderedDict, namedtuple
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from pprint import pprint
-from typing import Literal, Union
-import os
-import threading
-import time
+from typing import Literal
 
 import psutil
-
-
 import pyfiglet
 import yaml
 
@@ -38,6 +36,7 @@ def get_gsMap_logger(logger_name):
 
 
 logger = get_gsMap_logger("gsMap")
+
 
 def track_resource_usage(func):
     """
@@ -70,7 +69,7 @@ def track_resource_usage(func):
                         cpu_percent_samples.append(cpu_percent)
 
                     time.sleep(0.5)
-                except:
+                except Exception:  # Catching all exceptions here because... # noqa: BLE001
                     pass
 
         # Start resource monitoring in a separate thread
@@ -99,7 +98,9 @@ def track_resource_usage(func):
             cpu_time = end_cpu_time - start_cpu_time
 
             # Calculate average CPU percentage
-            avg_cpu_percent = sum(cpu_percent_samples) / len(cpu_percent_samples) if cpu_percent_samples else 0
+            avg_cpu_percent = (
+                sum(cpu_percent_samples) / len(cpu_percent_samples) if cpu_percent_samples else 0
+            )
 
             # Format memory for display
             if peak_memory < 1024:
@@ -124,14 +125,16 @@ def track_resource_usage(func):
 
             # Log the resource usage
             import logging
+
             logger = logging.getLogger("gsMap")
-            logger.info(f"Resource usage summary:")
+            logger.info("Resource usage summary:")
             logger.info(f"  • Wall clock time: {wall_time_str}")
             logger.info(f"  • CPU time: {cpu_time_str}")
             logger.info(f"  • Average CPU utilization: {avg_cpu_percent:.1f}%")
             logger.info(f"  • Peak memory usage: {memory_str}")
 
     return wrapper
+
 
 # Decorator to register functions for cli parsing
 def register_cli(name: str, description: str, add_args_function: Callable) -> Callable:
@@ -1168,6 +1171,7 @@ class CauchyCombinationConfig(ConfigWithAutoPaths):
                 "Output_file must be provided if sample_name_list is provided."
             )
 
+
 @dataclass
 class VisualizeConfig(ConfigWithAutoPaths):
     trait_name: str
@@ -1239,9 +1243,7 @@ class RunAllModeConfig(ConfigWithAutoPaths):
 
     def __post_init__(self):
         super().__post_init__()
-        self.gtffile = (
-            f"{self.gsMap_resource_dir}/genome_annotation/gtf/gencode.v46lift37.basic.annotation.gtf"
-        )
+        self.gtffile = f"{self.gsMap_resource_dir}/genome_annotation/gtf/gencode.v46lift37.basic.annotation.gtf"
         self.bfile_root = (
             f"{self.gsMap_resource_dir}/LD_Reference_Panel/1000G_EUR_Phase3_plink/1000G.EUR.QC"
         )
@@ -1306,7 +1308,7 @@ class FormatSumstatsConfig:
     se: str = None
     p: str = None
     frq: str = None
-    n: Union[str, int] = None
+    n: str | int = None
     z: str = None
     OR: str = None
     se_OR: str = None

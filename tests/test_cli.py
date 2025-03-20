@@ -2,10 +2,8 @@
 import logging
 import shlex
 import sys
-from pathlib import Path
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
 
 from gsMap.main import main
@@ -41,7 +39,9 @@ def test_gsmap_step_by_step_pipeline(stepbystep_config):
 
     # Verify Step 1
     assert config.hdf5_with_latent_path.exists(), "Latent representation h5ad file not created"
-    assert config.hdf5_with_latent_path.stat().st_size > 0, "Latent representation h5ad file is empty"
+    assert config.hdf5_with_latent_path.stat().st_size > 0, (
+        "Latent representation h5ad file is empty"
+    )
 
     # Step 2: Latent to gene
     logger.info("Step 2: Mapping latent representations to genes")
@@ -79,7 +79,11 @@ def test_gsmap_step_by_step_pipeline(stepbystep_config):
 
     # Verify Step 3
     # verify ldscore files
-    ldscore_chunk1_file = config.ldscore_save_dir / f"{config.sample_name}_chunk1" / f"{config.sample_name}.22.l2.ldscore.feather"
+    ldscore_chunk1_file = (
+        config.ldscore_save_dir
+        / f"{config.sample_name}_chunk1"
+        / f"{config.sample_name}.22.l2.ldscore.feather"
+    )
     assert ldscore_chunk1_file.exists(), "LDScore chunk1 file not created"
     assert ldscore_chunk1_file.stat().st_size > 0, "LDScore chunk1 file is empty"
     assert config.ldscore_save_dir.is_dir(), "LDScore directory not created"

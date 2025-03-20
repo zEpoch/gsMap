@@ -409,12 +409,12 @@ def gwas_format(config: FormatSumstatsConfig):
         compression=compression_type,
         na_values=[".", "NA"],
     )
-    
-    if isinstance(config.n, (int, float)):
+
+    if isinstance(config.n, int | float):
         logger.info(f"Set the sample size of gwas data as {config.n}.")
-        gwas['N'] = config.n
-        config.n = 'N'
-    
+        gwas["N"] = config.n
+        config.n = "N"
+
     logger.info(f"Read {len(gwas)} SNPs from {config.sumstats}.")
 
     # Check name and format

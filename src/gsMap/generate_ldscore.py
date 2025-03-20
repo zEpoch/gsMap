@@ -71,7 +71,6 @@ def load_marker_score(mk_score_file):
     return mk_score
 
 
-
 # load bim
 def load_bim(bfile_root, chrom):
     """
@@ -144,11 +143,13 @@ def get_snp_pass_maf(bfile_root, chrom, maf_min=0.05):
     """
     Get the dummy matrix of SNP-gene pairs.
     """
-    array_snps, array_indivs, geno_array = load_bfile( bfile_chr_prefix = f"{bfile_root}.{chrom}")
+    array_snps, array_indivs, geno_array = load_bfile(bfile_chr_prefix=f"{bfile_root}.{chrom}")
 
     m = len(array_snps.IDList)
     n = len(array_indivs.IDList)
-    logger.info(f"Loading genotype data for {m} SNPs and {n} individuals from {bfile_root}.{chrom}")
+    logger.info(
+        f"Loading genotype data for {m} SNPs and {n} individuals from {bfile_root}.{chrom}"
+    )
 
     ii = geno_array.maf > maf_min
     snp_pass_maf = array_snps.IDList[ii]

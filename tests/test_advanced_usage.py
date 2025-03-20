@@ -3,7 +3,6 @@ import shlex
 import sys
 from pathlib import Path
 from unittest.mock import patch
-import subprocess
 
 import pandas as pd
 import pytest
@@ -28,7 +27,9 @@ def test_conditional_analysis(conditional_config, additional_baseline_dir):
     # Verify the additional baseline annotation files exist
     for chrom in range(1, 23):
         baseline_file = additional_baseline_dir / f"baseline.{chrom}.annot.gz"
-        assert baseline_file.exists(), f"Additional baseline annotation file {baseline_file} not found"
+        assert baseline_file.exists(), (
+            f"Additional baseline annotation file {baseline_file} not found"
+        )
 
     # Step 1: Find latent representations
     logger.info("Step 1: Finding latent representations")
@@ -75,10 +76,11 @@ def test_conditional_analysis(conditional_config, additional_baseline_dir):
         main()
 
     # Verify additional baseline annotation directory was created
-    additional_baseline_dir_output = Path(
-        config.workdir) / config.sample_name / "generate_ldscore" / "additional_baseline"
+    additional_baseline_dir_output = (
+        Path(config.workdir) / config.sample_name / "generate_ldscore" / "additional_baseline"
+    )
     assert additional_baseline_dir_output.exists(), "Additional baseline directory was not created"
-    ldscore_file = additional_baseline_dir_output / f"baseline.22.l2.ldscore.feather"
+    ldscore_file = additional_baseline_dir_output / "baseline.22.l2.ldscore.feather"
     assert ldscore_file.exists(), "Additional baseline LDScore file was not created"
 
     # Step 4: Run spatial LDSC using the additional baseline annotation
@@ -130,8 +132,8 @@ def test_biological_replicates(biorep_config1, biorep_config2, work_dir):
 
     # Verify slice mean file contains expected data
     slice_mean_df = pd.read_parquet(slice_mean_file)
-    assert 'G_Mean' in slice_mean_df.columns, "G_Mean column not found in slice mean file"
-    assert 'frac' in slice_mean_df.columns, "frac column not found in slice mean file"
+    assert "G_Mean" in slice_mean_df.columns, "G_Mean column not found in slice mean file"
+    assert "frac" in slice_mean_df.columns, "frac column not found in slice mean file"
     assert len(slice_mean_df) > 0, "Slice mean file is empty"
 
     # Update config with slice mean file

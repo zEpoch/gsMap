@@ -1,6 +1,5 @@
-import logging
-from pathlib import Path
 import copy
+from pathlib import Path
 
 import pytest
 
@@ -118,7 +117,9 @@ def iq_sumstats_file(example_data_dir):
 @pytest.fixture(scope="session")
 def reference_panel(resource_dir):
     """Get path to reference panel file"""
-    ref_panel_path_prefix = (resource_dir / "LD_Reference_Panel_subset/1000G.EUR.QC.subset").as_posix()
+    ref_panel_path_prefix = (
+        resource_dir / "LD_Reference_Panel_subset/1000G.EUR.QC.subset"
+    ).as_posix()
     for chromosome in range(1, 23):
         bim_file = Path(f"{ref_panel_path_prefix}.{chromosome}.bim")
         assert bim_file.exists(), f"Reference panel file not found: {bim_file}"
@@ -126,7 +127,9 @@ def reference_panel(resource_dir):
 
 
 @pytest.fixture(scope="session")
-def base_config(work_dir, resource_dir, subsampled_h5ad_file1, homolog_file, iq_sumstats_file, reference_panel):
+def base_config(
+    work_dir, resource_dir, subsampled_h5ad_file1, homolog_file, iq_sumstats_file, reference_panel
+):
     """Create a base RunAllModeConfig fixture"""
     basic_config = RunAllModeConfig(
         workdir=work_dir,

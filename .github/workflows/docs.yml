@@ -3,8 +3,8 @@ name: Build and Deploy Documentation
 on:
   push:
     paths:
-      - 'docs/**'
-      - 'visualization_web_docs/**'
+      - "docs/**"
+      - "visualization_web_docs/**"
 
 jobs:
   deploy_docs:
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       # --- Build 'docs' documentation ---
       - name: Install 'docs' dependencies

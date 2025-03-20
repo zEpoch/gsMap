@@ -88,6 +88,7 @@ def which_compression(fh):
     # -
     return suffix, compression
 
+
 def _read_ref_ld_v2(ld_file):
     suffix = ".l2.ldscore"
     file = ld_file
@@ -151,6 +152,7 @@ def M(fh, common=False):
     M_array = pd.concat(M_array, axis=1).sum(axis=1)
     # -
     return np.array(M_array).reshape((1, len(M_array)))
+
 
 def _check_variance_v2(M_annot, ref_ld):
     ii = ref_ld.var() == 0

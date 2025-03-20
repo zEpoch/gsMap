@@ -33,7 +33,10 @@ def ID_List_Factory(colnames, keepcol, fname_end, header=None, usecols=None):
             if end and not fname.endswith(end):
                 raise ValueError(f"{end} filename must end in {end}")
             self.df = pd.read_csv(
-                fname, header=self.header, usecols=self.usecols, sep=r"\s+",
+                fname,
+                header=self.header,
+                usecols=self.usecols,
+                sep=r"\s+",
             )
             if self.colnames:
                 self.df.columns = self.colnames
@@ -238,12 +241,12 @@ class GenotypeArrayInMemory:
         rfuncBB = np.zeros((c, c))
         # chunk inside of block
         for l_B in np.arange(0, b, c):  # l_B := index of leftmost SNP in matrix B
-            B = A[:, l_B: l_B + c]
+            B = A[:, l_B : l_B + c]
             # ld matrix
             np.dot(A.T, B / n, out=rfuncAB)
             # ld matrix square
             rfuncAB = func(rfuncAB)
-            cor_sum[l_A: l_A + b, :] += np.dot(rfuncAB, annot[l_B: l_B + c, :])
+            cor_sum[l_A : l_A + b, :] += np.dot(rfuncAB, annot[l_B : l_B + c, :])
 
         # chunk to right of block
         b0 = b
@@ -259,10 +262,10 @@ class GenotypeArrayInMemory:
                 # block_size can't increase more than c
                 # block_size can't be less than c unless it is zero
                 # both of these things make sense
-                A = np.hstack((A[:, old_b - b + c: old_b], B))
+                A = np.hstack((A[:, old_b - b + c : old_b], B))
                 l_A += old_b - b + c
             elif l_B == b0 and b > 0:
-                A = A[:, b0 - b: b0]
+                A = A[:, b0 - b : b0]
                 l_A = b0 - b
             elif b == 0:  # no SNPs to left in window, e.g., after a sequence gap
                 A = np.array(()).reshape((n, 0))
@@ -275,18 +278,18 @@ class GenotypeArrayInMemory:
                 rfuncAB = np.zeros((b, c))
             # -
             B = snp_getter(c)
-            p1 = np.all(annot[l_A: l_A + b, :] == 0)
-            p2 = np.all(annot[l_B: l_B + c, :] == 0)
+            p1 = np.all(annot[l_A : l_A + b, :] == 0)
+            p2 = np.all(annot[l_B : l_B + c, :] == 0)
             if p1 and p2:
                 continue
             # -
             np.dot(A.T, B / n, out=rfuncAB)
             rfuncAB = func(rfuncAB)
-            cor_sum[l_A: l_A + b, :] += np.dot(rfuncAB, annot[l_B: l_B + c, :])
-            cor_sum[l_B: l_B + c, :] += np.dot(annot[l_A: l_A + b, :].T, rfuncAB).T
+            cor_sum[l_A : l_A + b, :] += np.dot(rfuncAB, annot[l_B : l_B + c, :])
+            cor_sum[l_B : l_B + c, :] += np.dot(annot[l_A : l_A + b, :].T, rfuncAB).T
             np.dot(B.T, B / n, out=rfuncBB)
             rfuncBB = func(rfuncBB)
-            cor_sum[l_B: l_B + c, :] += np.dot(rfuncBB, annot[l_B: l_B + c, :])
+            cor_sum[l_B : l_B + c, :] += np.dot(rfuncBB, annot[l_B : l_B + c, :])
         # -
         return cor_sum
 
@@ -350,8 +353,8 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         z = ba.bitarray(m * 2 * nru_new, endian="little")
         z.setall(0)
         for e, i in enumerate(keep_indivs):
-            z[2 * e:: 2 * nru_new] = geno[2 * i:: 2 * nru]
-            z[2 * e + 1:: 2 * nru_new] = geno[2 * i + 1:: 2 * nru]
+            z[2 * e :: 2 * nru_new] = geno[2 * i :: 2 * nru]
+            z[2 * e + 1 :: 2 * nru_new] = geno[2 * i + 1 :: 2 * nru]
         self.nru = nru_new
         return (z, m, n_new)
 
@@ -385,7 +388,7 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         kept_snps = []
         freq = []
         for e, j in enumerate(keep_snps):
-            z = geno[2 * nru * j: 2 * nru * (j + 1)]
+            z = geno[2 * nru * j : 2 * nru * (j + 1)]
             A = z[0::2]
             a = A.count()
             B = z[1::2]
@@ -439,7 +442,7 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         c = self._currentSNP
         n = self.n
         nru = self.nru
-        slice = self.geno[2 * c * nru: 2 * (c + b) * nru]
+        slice = self.geno[2 * c * nru : 2 * (c + b) * nru]
         X = np.array(slice.decode(self._bedcode), dtype="float64").reshape((b, nru)).T
         X = X[0:n, :]
         Y = np.zeros(X.shape)

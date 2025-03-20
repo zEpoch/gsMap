@@ -65,7 +65,7 @@ jobs:
             --cov-report=xml --run-real-data \
             --work-dir=${{ env.RUNNER_WORKDIR }}/workdir \
             --test-data=${{ env.TEST_DATA_DIR }}
-          
+
           # Generate HTML report for viewing
           python -m pytest --cov=src --cov-report=html --cov-config=.coveragerc
 
