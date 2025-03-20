@@ -9,6 +9,12 @@ from functools import wraps
 from pathlib import Path
 from pprint import pprint
 from typing import Literal, Union
+import os
+import threading
+import time
+
+import psutil
+
 
 import pyfiglet
 import yaml
@@ -33,10 +39,105 @@ def get_gsMap_logger(logger_name):
 
 logger = get_gsMap_logger("gsMap")
 
+def track_resource_usage(func):
+    """
+    Decorator to track resource usage during function execution.
+    Logs memory usage, CPU time, and wall clock time at the end of the function.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Get the current process
+        process = psutil.Process(os.getpid())
+
+        # Initialize tracking variables
+        peak_memory = 0
+        cpu_percent_samples = []
+        stop_thread = False
+
+        # Function to monitor resource usage
+        def resource_monitor():
+            nonlocal peak_memory, cpu_percent_samples
+            while not stop_thread:
+                try:
+                    # Get current memory usage in MB
+                    current_memory = process.memory_info().rss / (1024 * 1024)
+                    peak_memory = max(peak_memory, current_memory)
+
+                    # Get CPU usage percentage
+                    cpu_percent = process.cpu_percent(interval=None)
+                    if cpu_percent > 0:  # Skip initial zero readings
+                        cpu_percent_samples.append(cpu_percent)
+
+                    time.sleep(0.5)
+                except:
+                    pass
+
+        # Start resource monitoring in a separate thread
+        monitor_thread = threading.Thread(target=resource_monitor)
+        monitor_thread.daemon = True
+        monitor_thread.start()
+
+        # Get start times
+        start_wall_time = time.time()
+        start_cpu_time = process.cpu_times().user + process.cpu_times().system
+
+        try:
+            # Run the actual function
+            result = func(*args, **kwargs)
+            return result
+        finally:
+            # Stop the monitoring thread
+            stop_thread = True
+            monitor_thread.join(timeout=1.0)
+
+            # Calculate elapsed times
+            end_wall_time = time.time()
+            end_cpu_time = process.cpu_times().user + process.cpu_times().system
+
+            wall_time = end_wall_time - start_wall_time
+            cpu_time = end_cpu_time - start_cpu_time
+
+            # Calculate average CPU percentage
+            avg_cpu_percent = sum(cpu_percent_samples) / len(cpu_percent_samples) if cpu_percent_samples else 0
+
+            # Format memory for display
+            if peak_memory < 1024:
+                memory_str = f"{peak_memory:.2f} MB"
+            else:
+                memory_str = f"{peak_memory / 1024:.2f} GB"
+
+            # Format times for display
+            if wall_time < 60:
+                wall_time_str = f"{wall_time:.2f} seconds"
+            elif wall_time < 3600:
+                wall_time_str = f"{wall_time / 60:.2f} minutes"
+            else:
+                wall_time_str = f"{wall_time / 3600:.2f} hours"
+
+            if cpu_time < 60:
+                cpu_time_str = f"{cpu_time:.2f} seconds"
+            elif cpu_time < 3600:
+                cpu_time_str = f"{cpu_time / 60:.2f} minutes"
+            else:
+                cpu_time_str = f"{cpu_time / 3600:.2f} hours"
+
+            # Log the resource usage
+            import logging
+            logger = logging.getLogger("gsMap")
+            logger.info(f"Resource usage summary:")
+            logger.info(f"  • Wall clock time: {wall_time_str}")
+            logger.info(f"  • CPU time: {cpu_time_str}")
+            logger.info(f"  • Average CPU utilization: {avg_cpu_percent:.1f}%")
+            logger.info(f"  • Peak memory usage: {memory_str}")
+
+    return wrapper
 
 # Decorator to register functions for cli parsing
 def register_cli(name: str, description: str, add_args_function: Callable) -> Callable:
     def decorator(func: Callable) -> Callable:
+        @track_resource_usage  # Use enhanced resource tracking
+        @wraps(func)
         def wrapper(*args, **kwargs):
             name.replace("_", " ")
             gsMap_main_logo = pyfiglet.figlet_format(
@@ -50,8 +151,16 @@ def register_cli(name: str, description: str, add_args_function: Callable) -> Ca
             print(version_number.center(80), flush=True)
             print("=" * 80, flush=True)
             logger.info(f"Running {name}...")
+
+            # Record start time for the log message
+            start_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            logger.info(f"Started at: {start_time}")
+
             func(*args, **kwargs)
-            logger.info(f"Finished running {name}.")
+
+            # Record end time for the log message
+            end_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            logger.info(f"Finished running {name} at: {end_time}.")
 
         cli_function_registry[name] = subcommand(
             name=name, func=wrapper, add_args_function=add_args_function, description=description
@@ -67,7 +176,7 @@ def str_or_float(value):
     except ValueError:
         return value
 
-    
+
 def add_shared_args(parser):
     parser.add_argument(
         "--workdir", type=str, required=True, help="Path to the working directory."
@@ -1131,7 +1240,7 @@ class RunAllModeConfig(ConfigWithAutoPaths):
     def __post_init__(self):
         super().__post_init__()
         self.gtffile = (
-            f"{self.gsMap_resource_dir}/genome_annotation/gtf/gencode.v39lift37.annotation.gtf"
+            f"{self.gsMap_resource_dir}/genome_annotation/gtf/gencode.v46lift37.basic.annotation.gtf"
         )
         self.bfile_root = (
             f"{self.gsMap_resource_dir}/LD_Reference_Panel/1000G_EUR_Phase3_plink/1000G.EUR.QC"

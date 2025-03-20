@@ -75,7 +75,7 @@ def calculate_one_slice_mean(
         data = adata_X[i, :].toarray().flatten()
         ranks[i, :] = rankdata(data, method="average")
 
-    gM  = gmean(ranks, axis=0)
+    gM  = gmean(ranks, axis=0).reshape(-1, 1)
 
     # Calculate the expression fractio
     adata_X_bool = adata.X.astype(bool)
