@@ -119,7 +119,7 @@ def merge_zarr_means(zarr_group_path, output_file, common_genes):
     sample_gmeans = np.array(sample_gmeans)
     sample_weights = np.array(sample_weights)
 
-    final_gmean = gmean(sample_gmeans, axis=0, weights=sample_weights)
+    final_gmean = gmean(sample_gmeans, axis=0, weights=sample_weights[:, np.newaxis])
 
     final_frac = frac_sum / total_spot_number
 

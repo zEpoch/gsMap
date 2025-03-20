@@ -21,6 +21,12 @@ def pytest_addoption(parser):
         default=None,
         help="Path to test data directory for gsMap tests",
     )
+    parser.addoption(
+        "--work-dir",
+        action="store",
+        default=None,
+        help="Path to working directory for test outputs (defaults to a temporary directory)",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -58,8 +64,18 @@ def resource_dir(test_data_dir):
 
 
 @pytest.fixture(scope="session")
-def work_dir(tmp_path_factory):
-    """Create working directory for test outputs"""
+def work_dir(request, tmp_path_factory):
+    """
+    If --work-dir is provided, use that directory instead of a temporary one.
+    """
+    custom_dir = request.config.getoption("--work-dir")
+
+    if custom_dir:
+        work_dir = Path(custom_dir)
+        work_dir.mkdir(parents=True, exist_ok=True)
+        return work_dir
+
+    # Otherwise, use a temporary directory
     return tmp_path_factory.mktemp("Mouse_Embryo")
 
 
@@ -98,6 +114,7 @@ def iq_sumstats_file(example_data_dir):
         pytest.skip(f"Summary statistics file not found: {sumstats_path}")
     return sumstats_path
 
+
 @pytest.fixture(scope="session")
 def reference_panel(resource_dir):
     """Get path to reference panel file"""
@@ -107,10 +124,11 @@ def reference_panel(resource_dir):
         assert bim_file.exists(), f"Reference panel file not found: {bim_file}"
     return ref_panel_path_prefix
 
+
 @pytest.fixture(scope="session")
 def base_config(work_dir, resource_dir, subsampled_h5ad_file1, homolog_file, iq_sumstats_file, reference_panel):
     """Create a base RunAllModeConfig fixture"""
-    basic_config=RunAllModeConfig(
+    basic_config = RunAllModeConfig(
         workdir=work_dir,
         sample_name="test_sample",  # This will be overridden in specific test fixtures
         annotation="annotation",
@@ -124,6 +142,7 @@ def base_config(work_dir, resource_dir, subsampled_h5ad_file1, homolog_file, iq_
     )
     basic_config.bfile_root = reference_panel
     return basic_config
+
 
 @pytest.fixture
 def stepbystep_config(base_config):
