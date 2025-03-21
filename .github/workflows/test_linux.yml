@@ -1,4 +1,4 @@
-name: Linux Tests
+name: Linux_Tests
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
 
     env:
       PYTHON: ${{ matrix.python }}
-      RUNNER_WORKDIR: ${{ vars.RUNNER_WORKDIR_BASE || '/mnt/workdir' }}/gsMap-${{ github.workflow }}-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.python }}
+      RUNNER_WORKDIR: ${{ vars.RUNNER_WORKDIR_BASE || '/mnt/workdir' }}/gsMap-${{ github.workflow }}-${{ github.run_number }}-${{ matrix.python }}
       TEST_DATA_DIR: /gsmap_test_data
 
     steps:
@@ -48,27 +48,29 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel uv
-          python -m uv pip install "gsMap[tests] @ ."
+          python -m uv pip install -e "gsMap[tests] @ ."
 
       - name: Run pytest
-        working-directory: ${{ env.RUNNER_WORKDIR }}/gsMap
+        working-directory: ${{ env.RUNNER_WORKDIR }}
         env:
           MPLBACKEND: agg
           DISPLAY: :42
           COLUMNS: 120
         run: |
-          python -m pytest --cov=src --cov-report=term-missing -v -s --color=yes \
-            --cov-report=xml --run-real-data \
-            --work-dir=${{ env.RUNNER_WORKDIR }}/workdir \
-            --test-data=${{ env.TEST_DATA_DIR }}
-
-          # Generate HTML report for viewing
-          python -m pytest --cov=src --cov-report=html --cov-config=.coveragerc
+          python -m pytest --cov=src \
+              --cov-report=term-missing \
+              --cov-report=xml \
+              --cov-report=html \
+              --cov-config=.coveragerc \
+              -v -s --color=yes \
+              --run-real-data \
+              --work-dir=${{ env.RUNNER_WORKDIR }} \
+              --test-data=${{ env.TEST_DATA_DIR }}
 
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ${{ env.RUNNER_WORKDIR }}/gsMap/coverage.xml
+          files: ${{ env.RUNNER_WORKDIR }}/coverage.xml
           fail_ci_if_error: false
 
       - name: Retain test results
