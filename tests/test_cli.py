@@ -32,7 +32,8 @@ def test_gsmap_step_by_step_pipeline(stepbystep_config):
         --sample_name {config.sample_name} \
         --input_hdf5_path '{config.hdf5_path}' \
         --annotation '{config.annotation}' \
-        --data_layer '{config.data_layer}'
+        --data_layer '{config.data_layer}' \
+        --n_comps '{config.n_comps}'
     """
     with patch.object(sys, "argv", parse_bash_command(command)):
         main()

@@ -1225,6 +1225,9 @@ class RunAllModeConfig(ConfigWithAutoPaths):
     annotation: str
     data_layer: str = "X"
 
+    # == Find Latent Representation PARAMETERS ==
+    n_comps: int = 300
+
     # == latent 2 Gene PARAMETERS ==
     gM_slices: str | None = None
     latent_representation: str = None

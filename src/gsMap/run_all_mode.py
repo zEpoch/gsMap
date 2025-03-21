@@ -67,6 +67,7 @@ def run_pipeline(config: RunAllModeConfig):
             sample_name=config.sample_name,
             annotation=config.annotation,
             data_layer=config.data_layer,
+            n_comps=config.n_comps,
         )
 
         # Step 1: Find latent representations

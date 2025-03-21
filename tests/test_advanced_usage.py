@@ -39,7 +39,8 @@ def test_conditional_analysis(conditional_config, additional_baseline_dir):
         --sample_name {config.sample_name} \
         --input_hdf5_path '{config.hdf5_path}' \
         --annotation '{config.annotation}' \
-        --data_layer '{config.data_layer}'
+        --data_layer '{config.data_layer}' \
+        --n_comps '{config.n_comps}'
     """
     with patch.object(sys, "argv", parse_bash_command(command)):
         main()
@@ -194,7 +195,8 @@ def test_customized_latent_representations(customlatent_config):
         --sample_name {config.sample_name} \
         --input_hdf5_path '{config.hdf5_path}' \
         --annotation '{config.annotation}' \
-        --data_layer '{config.data_layer}'
+        --data_layer '{config.data_layer}' \
+        --n_comps '{config.n_comps}'
     """
     with patch.object(sys, "argv", parse_bash_command(command)):
         main()

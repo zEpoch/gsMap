@@ -127,8 +127,23 @@ def reference_panel(resource_dir):
 
 
 @pytest.fixture(scope="session")
+def gtf_file(resource_dir):
+    """Get path to GTF file"""
+    gtf_path = resource_dir / "genome_annotation/gtf/gencode.v46lift37.5000_protein_coding.gtf"
+    if not gtf_path.exists():
+        pytest.skip(f"GTF file not found: {gtf_path}")
+    return gtf_path
+
+
+@pytest.fixture(scope="session")
 def base_config(
-    work_dir, resource_dir, subsampled_h5ad_file1, homolog_file, iq_sumstats_file, reference_panel
+    work_dir,
+    resource_dir,
+    subsampled_h5ad_file1,
+    homolog_file,
+    iq_sumstats_file,
+    reference_panel,
+    gtf_file,
 ):
     """Create a base RunAllModeConfig fixture"""
     basic_config = RunAllModeConfig(
@@ -142,8 +157,10 @@ def base_config(
         sumstats_file=str(iq_sumstats_file),
         max_processes=4,
         gsMap_resource_dir=str(resource_dir),
+        n_comps=100,
     )
     basic_config.bfile_root = reference_panel
+    basic_config.gtffile = str(gtf_file)
     return basic_config
 
 

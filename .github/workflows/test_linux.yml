@@ -1,4 +1,4 @@
-name: Linux_Tests
+name: test
 
 on:
   push:
@@ -23,13 +23,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.11", "3.12"]
+        python: ["3.10", "3.13"]
 
     name: Python ${{ matrix.python }} integration
 
     env:
       PYTHON: ${{ matrix.python }}
-      RUNNER_WORKDIR: ${{ vars.RUNNER_WORKDIR_BASE || '/mnt/workdir' }}/gsMap-${{ github.workflow }}-${{ github.run_number }}-${{ matrix.python }}
+      RUNNER_WORKDIR: ${{ vars.RUNNER_WORKDIR_BASE || '/mnt/workdir' }}/${{ github.repository }}/${{ github.workflow }}-${{ github.run_number }}-${{ matrix.python }}
       TEST_DATA_DIR: /gsmap_test_data
 
     steps:
@@ -39,6 +39,7 @@ jobs:
           echo "Created workdir: $RUNNER_WORKDIR"
 
       - uses: actions/checkout@v4
+        # Remove the custom path to let the runner use its default location
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v5
@@ -51,7 +52,6 @@ jobs:
           python -m uv pip install -e "gsMap[tests] @ ."
 
       - name: Run pytest
-        working-directory: ${{ env.RUNNER_WORKDIR }}
         env:
           MPLBACKEND: agg
           DISPLAY: :42
@@ -70,12 +70,13 @@ jobs:
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ${{ env.RUNNER_WORKDIR }}/coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
 
       - name: Retain test results
         if: always()
         run: |
+          cp -r coverage.xml coverage-html/ .coverage $RUNNER_WORKDIR/ || true
           echo "Test results are stored in $RUNNER_WORKDIR"
           # Create a summary file with metadata
           echo "Test run completed at $(date)" > $RUNNER_WORKDIR/test-summary.txt
