@@ -12,7 +12,7 @@ How to Cite
 ------------
 If you use ``gsMap`` in your studies, please cite:
 
-   Song, L., Chen, W., Hou, J., Guo, M. & Yang, J. Spatially resolved mapping of cells associated with human complex traits. medRxiv, 2024.2010.2031.24316538 (2024)
+   Song, L., Chen, W., Hou, J., Guo, M. & Yang, J. `Spatially resolved mapping of cells associated with human complex traits <https://doi.org/10.1038/s41586-025-08757-x>`_. Nature (2025).
 
 Key Features
 ------------

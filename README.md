@@ -36,7 +36,7 @@ pip install gsMap
 Install from source:
 
 ```bash
-git clone https://github.com/LeonSong1995/gsMap.git
+git clone https://github.com/JianYang-Lab/gsMap
 cd gsMap
 pip install -e .
 ```
@@ -59,7 +59,7 @@ please refer to [gsMap Visualization](https://yanglab.westlake.edu.cn/gsmap/visu
 ## Citation
 
 Song, L., Chen, W., Hou, J., Guo, M. & Yang, J.
-[Spatially reso lved mapping of cells associated with human complex traits.](https://doi.org/10.1038/s41586-025-08757-x)
+[Spatially resolved mapping of cells associated with human complex traits.](https://doi.org/10.1038/s41586-025-08757-x)
 Nature (2025).
 
 Please cite the paper and give us a STAR if you find gsMap useful for your research.

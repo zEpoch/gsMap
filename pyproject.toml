@@ -73,7 +73,7 @@ tests = [
 ]
 
 [project.urls]
-Home = "https://github.com/LeonSong1995/gsMap"
+Home = "https://github.com/JianYang-Lab/gsMap"
 Documentation = "https://yanglab.westlake.edu.cn/gsmap/document/software"
 Website = "https://yanglab.westlake.edu.cn/gsmap/home"
 
