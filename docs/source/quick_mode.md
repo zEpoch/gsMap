@@ -9,18 +9,21 @@ Make sure you have {doc}`installed <install>` the `gsMap` package before proceed
 ### 1. Download Dependencies
 
 The `gsMap` package in quick mode requires the following resources:
+
 - **Gene transfer format (GTF) file**, for gene coordinates on the genome.
 - **LD reference panel**, in quick mode, we provide a pre-built LD score snp-by-gene matrix based on 1000G_EUR_Phase3.
 - **SNP weight file**, to adjust correlations between SNP-trait association statistics.
 - **Homologous gene transformations file** (optional), to map genes between species.
 
 To download all the required files:
+
 ```bash
 wget https://yanglab.westlake.edu.cn/data/gsMap/gsMap_resource.tar.gz
 tar -xvzf gsMap_resource.tar.gz
 ```
 
 Directory structure:
+
 ```bash
 tree -L 2
 
@@ -52,6 +55,7 @@ tar -xvzf gsMap_example_data.tar.gz
 ```
 
 Directory structure:
+
 ```bash
 tree -L 2
 
@@ -82,7 +86,7 @@ gsmap quick_mode \
     --trait_name 'IQ'
 ```
 
-### Parameters:
+### Parameters
 
 - `--workdir`: The working directory where output files will be saved.
 - `--homolog_file`: The homologous gene file for converting gene names from different species to human.
@@ -94,7 +98,7 @@ gsmap quick_mode \
 - `--sumstats_file`: Path to the GWAS summary statistics file.
 - `--trait_name`: Name of the trait (e.g., `IQ`).
 
-### Additional Options:
+### Additional Options
 
 - If you want to analyze multiple traits at once, provide a configuration file (`--sumstats_config_file`) instead of a single summary statistics file:
 

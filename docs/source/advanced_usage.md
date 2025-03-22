@@ -15,22 +15,25 @@ gsmap run_latent_to_gene \
 ```
 
 ## Conditional Analysis
+
 **Objective**: Perform conditional analysis by adjusting for other functional annotations or cell-type-level annotations.
 
 This step extends `step 3: generate ldscore`, by adding additional functional annotations to the baseline with the aim of conducting a conditional analysis. The directory of additional annotations can be specified using the parameter `--additional_baseline_annotation`. The other steps are same to the tutorials above.
 
 Download the additional annotations:
+
 ```bash
 wget https://yanglab.westlake.edu.cn/data/gsMap/gsMap_additional_annotation.tar.gz
 tar -xvzf gsMap_additional_annotation.tar.gz
 ```
+
 The format of the additional annotation files is such that each line represents a SNP, with columns indicating the annotation values for that SNP. These values can be either binary or continuous.
+
 ```bash
 zless -S gsMap_additional_annotation/baseline.1.annot.gz
 ```
 
 **Execution**: <span style="color:#31a354"> required memory: ~50G </span>
-
 
 ```bash
 for CHROM in {1..22}
@@ -48,6 +51,7 @@ done
 ```
 
 ## gsMap on Biological Replicates
+
 **Objective**: When multiple biological replicates are available, a uniform slice mean can be calculated for the gene ranks across the samples. This slice mean rank can then be used to compute the GSS. This approach ensures more consistent and comparable results across different samples.
 
 ### Calculate the Slice Mean
@@ -82,7 +86,6 @@ gsmap quick_mode \
     --gM_slices './workdir/sample_slice_mean.parquet'
 ```
 
-
 ### Use the Slice Mean in Step-by-Step Mode
 
 To incorporate the slice mean into the step-by-step pipeline, provide the slice mean file using the `--gM_slices` parameter in the `run_latent_to_gene` command. This enables the computation of gene specificity scores based on the slice mean.
@@ -102,7 +105,7 @@ gsmap run_latent_to_gene \
 
 ### Cauchy combination for multiple samples
 
-Use the `run_cauchy_combination` command to aggregate the spot p-values  for the same annotation across multiple samples.
+Use the `run_cauchy_combination` command to aggregate the spot p-values for the same annotation across multiple samples.
 
 ```bash
 gsmap run_cauchy_combination \

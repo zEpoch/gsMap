@@ -26,7 +26,6 @@ repos:
         exclude: |
           (?x)^(
             \.github/.*\.md
-            | docs/.*\.md
           )$
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -36,7 +35,6 @@ repos:
         exclude: |
           (?x)^(
             \.github/.*\.md
-            | docs/.*\.md
           )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

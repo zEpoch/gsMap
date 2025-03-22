@@ -164,7 +164,6 @@ convention = "numpy"
 "docs/*" = ["I", "BLE001"]
 "tests/*" = ["D"]
 "*/__init__.py" = ["F401"]
-"src/scvi/__init__.py" = ["I"]
 
 [tool.ruff.format]
 docstring-code-format = true

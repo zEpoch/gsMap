@@ -9,6 +9,7 @@ Please ensure you have {doc}`installed <install>` the `gsMap`. This tutorial gui
 ### 1. Download dependencies
 
 `gsMap` requires specific reference files:
+
 - **Gene transfer format (GTF) file**, for gene coordinates on the genome.
 - **LD reference panel (PLINK bfile)**, for computing LD scores.
 - **SNP weight file**, to adjust correlations between SNP-trait association statistics.
@@ -16,12 +17,14 @@ Please ensure you have {doc}`installed <install>` the `gsMap`. This tutorial gui
 - **Enhancer-gene mapping file** (optional), for linking SNPs to genes based on enhancer annotations.
 
 To download the resources:
+
 ```bash
 wget https://yanglab.westlake.edu.cn/data/gsMap/gsMap_resource.tar.gz
 tar -xvzf gsMap_resource.tar.gz
 ```
 
 Directory structure:
+
 ```bash
 tree -L 2
 
@@ -42,6 +45,7 @@ gsMap_resource
         ├── SNP_gene_pair
         └── snp_gene_weight_matrix.h5ad
 ```
+
 If you want to use your own reference files, please ensure that the genome build versions (e.g., Hg37 or Hg38) are consistent between the GTF file and the LD reference panel.
 
 ### 2. Download example data
@@ -52,6 +56,7 @@ tar -xvzf gsMap_example_data.tar.gz
 ```
 
 Directory structure:
+
 ```bash
 tree -L 2
 
@@ -133,7 +138,7 @@ done
 ```
 ````
 
-`````{tab} 2. Use Enhancer-Gene Linking
+````{tab} 2. Use Enhancer-Gene Linking
 This strategy uses enhancer-gene linking to assign GSS to SNPs. When a SNP maps to multiple enhancers, the GSS for the SNP is determined by the `--snp_multiple_enhancer_strategy` parameter. By default, this is set to `max_mkscore`, which assigns the SNP the maximum GSS among the enhancers it maps to. Another option is `nearest_TSS`.
 
 ```bash
@@ -151,9 +156,9 @@ do
         --gene_window_enhancer_priority 'enhancer_only'
 done
 ```
-`````
+````
 
-`````{tab} 3. Use TSS and Enhancer-Gene Linking
+````{tab} 3. Use TSS and Enhancer-Gene Linking
 This strategy uses both TSS and enhancer-gene linking to assign GSS to SNPs. If a SNP maps to both a gene TSS window and an enhancer linked to a different gene, the `--gene_window_enhancer_priority` parameter decides which gene the SNP is assigned to. The options are `gene_window_first` or `enhancer_first`.
 
 ```bash
@@ -172,7 +177,7 @@ do
         --gene_window_enhancer_priority 'gene_window_first'
 done
 ```
-`````
+````
 
 ```{caution}
 If you run out of memory during this step or the next, you can reduce the `--spots_per_chunk` parameter to a smaller value. Generally, 40GB of memory is required when `--spots_per_chunk` is set to 1000.
@@ -193,7 +198,6 @@ gsmap run_spatial_ldsc \
     --w_file 'gsMap_resource/LDSC_resource/weights_hm3_no_hla/weights.' \
     --num_processes 4
 ```
-
 
 ### 5. cauchy combination (optional)
 
