@@ -132,7 +132,7 @@ do
         --chrom $CHROM \
         --bfile_root 'gsMap_resource/LD_Reference_Panel/1000G_EUR_Phase3_plink/1000G.EUR.QC' \
         --keep_snp_root 'gsMap_resource/LDSC_resource/hapmap3_snps/hm' \
-        --gtf_annotation_file 'gsMap_resource/genome_annotation/gtf/gencode.v39lift37.annotation.gtf' \
+        --gtf_annotation_file 'gsMap_resource/genome_annotation/gtf/gencode.v46lift37.basic.annotation.gtf' \
         --gene_window_size 50000
 done
 ```
@@ -150,7 +150,7 @@ do
         --chrom $CHROM \
         --bfile_root 'gsMap_resource/LD_Reference_Panel/1000G_EUR_Phase3_plink/1000G.EUR.QC' \
         --keep_snp_root 'gsMap_resource/LDSC_resource/hapmap3_snps/hm' \
-        --gtf_annotation_file 'gsMap_resource/genome_annotation/gtf/gencode.v39lift37.annotation.gtf' \
+        --gtf_annotation_file 'gsMap_resource/genome_annotation/gtf/gencode.v46lift37.basic.annotation.gtf' \
         --enhancer_annotation_file 'gsMap_resource/genome_annotation/enhancer/by_tissue/ALL/ABC_roadmap_merged.bed' \
         --snp_multiple_enhancer_strategy 'max_mkscore' \
         --gene_window_enhancer_priority 'enhancer_only'
@@ -170,7 +170,7 @@ do
         --chrom $CHROM \
         --bfile_root 'gsMap_resource/LD_Reference_Panel/1000G_EUR_Phase3_plink/1000G.EUR.QC' \
         --keep_snp_root 'gsMap_resource/LDSC_resource/hapmap3_snps/hm' \
-        --gtf_annotation_file 'gsMap_resource/genome_annotation/gtf/gencode.v39lift37.annotation.gtf' \
+        --gtf_annotation_file 'gsMap_resource/genome_annotation/gtf/gencode.v46lift37.basic.annotation.gtf' \
         --gene_window_size 50000 \
         --enhancer_annotation_file 'gsMap_resource/genome_annotation/enhancer/by_tissue/ALL/ABC_roadmap_merged.bed' \
         --snp_multiple_enhancer_strategy 'max_mkscore' \
