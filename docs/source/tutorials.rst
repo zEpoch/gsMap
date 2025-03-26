@@ -27,4 +27,5 @@ The tutorials are organized as follows:
     quick_mode.md
     step_by_step.md
     advanced_usage.md
+    10x.md
     data_format.md
