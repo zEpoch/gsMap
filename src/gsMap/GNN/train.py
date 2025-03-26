@@ -17,7 +17,7 @@ def reconstruction_loss(decoded, x):
 
 def label_loss(pred_label, true_label):
     """Compute the cross-entropy loss."""
-    return F.cross_entropy(pred_label, true_label)
+    return F.cross_entropy(pred_label, true_label.long())
 
 
 class ModelTrainer:
