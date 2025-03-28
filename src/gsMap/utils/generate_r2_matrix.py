@@ -465,7 +465,7 @@ class PlinkBEDFile(GenotypeArrayInMemory):
         return Y
 
 
-def load_bfile(bfile_chr_prefix):
+def load_bfile(bfile_chr_prefix, keep_snps=None, keep_indivs=None, mafMin=None):
     PlinkBIMFile = ID_List_Factory(
         ["CHR", "SNP", "CM", "BP", "A1", "A2"], 1, ".bim", usecols=[0, 1, 2, 3, 4, 5]
     )
@@ -483,7 +483,7 @@ def load_bfile(bfile_chr_prefix):
     # Load genotype array
     array_file = bfile_chr_prefix + ".bed"
     geno_array = PlinkBEDFile(
-        array_file, n, array_snps, keep_snps=None, keep_indivs=None, mafMin=None
+        array_file, n, array_snps, keep_snps=keep_snps, keep_indivs=keep_indivs, mafMin=mafMin
     )
 
     return array_snps, array_indivs, geno_array

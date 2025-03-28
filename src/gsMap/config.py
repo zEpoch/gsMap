@@ -311,7 +311,7 @@ def add_generate_ldscore_args(parser):
         help="Root path for genotype plink bfiles (.bim, .bed, .fam).",
     )
     parser.add_argument(
-        "--keep_snp_root", type=str, required=True, help="Root path for SNP files."
+        "--keep_snp_root", type=str, required=False, help="Root path for SNP files"
     )
     parser.add_argument(
         "--gtf_annotation_file", type=str, required=True, help="Path to GTF annotation file."

@@ -276,7 +276,12 @@ def get_snp_pass_maf(bfile_root: str, chrom: int, maf_min: float = 0.05) -> list
 
 
 def get_ldscore(
-    bfile_root: str, chrom: int, annot_matrix: np.ndarray, ld_wind: float, ld_unit: str = "CM"
+    bfile_root: str,
+    chrom: int,
+    annot_matrix: np.ndarray,
+    ld_wind: float,
+    ld_unit: str = "CM",
+    keep_snps_index: list[int] = None,
 ) -> pd.DataFrame:
     """
     Calculate LD scores using PLINK data and an annotation matrix.
@@ -293,13 +298,17 @@ def get_ldscore(
         LD window size
     ld_unit : str, optional
         Unit for the LD window, by default "CM"
+    keep_snps_index : list[int], optional
+        Indices of SNPs to keep, by default None
 
     Returns
     -------
     pd.DataFrame
         DataFrame with calculated LD scores
     """
-    array_snps, array_indivs, geno_array = load_bfile(bfile_chr_prefix=f"{bfile_root}.{chrom}")
+    array_snps, array_indivs, geno_array = load_bfile(
+        bfile_chr_prefix=f"{bfile_root}.{chrom}", keep_snps=keep_snps_index
+    )
 
     # Configure LD window based on specified unit
     if ld_unit == "SNP":
@@ -593,6 +602,10 @@ class LDScoreCalculator:
             if self.keep_snp_mask is not None:
                 self.snp_gene_weight_matrix = self.snp_gene_weight_matrix[self.keep_snp_mask]
 
+        # Generate w_ld file if keep_snp_root is provided
+        if self.config.keep_snp_root:
+            self._generate_w_ld(chrom)
+
         # Save pre-calculated SNP-gene weight matrix if requested
         self._save_snp_gene_weight_matrix_if_needed(chrom)
 
@@ -610,6 +623,72 @@ class LDScoreCalculator:
 
         # Clear memory
         self._clear_memory()
+
+    def _generate_w_ld(self, chrom: int):
+        """
+        Generate w_ld file for the chromosome using filtered SNPs.
+
+        Parameters
+        ----------
+        chrom : int
+            Chromosome number
+        """
+        if not self.config.keep_snp_root:
+            logger.info(
+                f"Skipping w_ld generation for chr{chrom} as keep_snp_root is not provided"
+            )
+            return
+
+        logger.info(f"Generating w_ld for chr{chrom}")
+
+        # Get the indices of SNPs to keep based on the keep_snp_mask
+        keep_snps_index = np.nonzero(self.keep_snp_mask)[0]
+
+        # Create a simple unit annotation (all ones) for the filtered SNPs
+        unit_annotation = np.ones((len(keep_snps_index), 1))
+
+        # Calculate LD scores using the filtered SNPs
+        w_ld_scores = get_ldscore(
+            self.config.bfile_root,
+            chrom,
+            unit_annotation,
+            ld_wind=self.config.ld_wind,
+            ld_unit=self.config.ld_unit,
+            keep_snps_index=keep_snps_index.tolist(),
+        )
+
+        # Load the BIM file to get SNP information
+        bim_data = pd.read_csv(
+            f"{self.config.bfile_root}.{chrom}.bim",
+            sep="\t",
+            header=None,
+            names=["CHR", "SNP", "CM", "BP", "A1", "A2"],
+        )
+
+        # Get SNP names for the kept indices
+        kept_snp_names = bim_data.iloc[keep_snps_index].SNP.tolist()
+
+        # Create the w_ld DataFrame
+        w_ld_df = pd.DataFrame(
+            {
+                "SNP": kept_snp_names,
+                "L2": w_ld_scores.values.flatten(),
+                "CHR": bim_data.iloc[keep_snps_index].CHR.values,
+                "BP": bim_data.iloc[keep_snps_index].BP.values,
+                "CM": bim_data.iloc[keep_snps_index].CM.values,
+            }
+        )
+
+        # Reorder columns
+        w_ld_df = w_ld_df[["CHR", "SNP", "BP", "CM", "L2"]]
+
+        # Save to feather format
+        w_ld_dir = Path(self.config.ldscore_save_dir) / "w_ld"
+        w_ld_dir.mkdir(parents=True, exist_ok=True)
+        w_ld_file = w_ld_dir / f"weights.{chrom}.l2.ldscore.gz"
+        w_ld_df.to_csv(w_ld_file, sep="\t", index=False, compression="gzip")
+
+        logger.info(f"Saved w_ld for chr{chrom} to {w_ld_file}")
 
     def _apply_snp_filter(self, chrom: int):
         """
@@ -771,6 +850,57 @@ class LDScoreCalculator:
             m_5_file,
             drop_dummy_na=False,
         )
+
+        # If keep_snp_root is not provided, use the first column of baseline ldscore as w_ld
+        if not self.config.keep_snp_root:
+            self._save_baseline_as_w_ld(chrom, ldscore_chunk)
+
+    def _save_baseline_as_w_ld(self, chrom: int, ldscore_chunk: np.ndarray):
+        """
+        Save the first column of baseline ldscore as w_ld.
+
+        Parameters
+        ----------
+        chrom : int
+            Chromosome number
+        ldscore_chunk : np.ndarray
+            Array with baseline LD scores
+        """
+        logger.info(f"Using first column of baseline ldscore as w_ld for chr{chrom}")
+
+        # Create w_ld directory
+        w_ld_dir = Path(self.config.ldscore_save_dir) / "w_ld"
+        w_ld_dir.mkdir(parents=True, exist_ok=True)
+
+        # Define file path
+        w_ld_file = w_ld_dir / f"weights.{chrom}.l2.ldscore.gz"
+
+        # Extract the first column
+        w_ld_values = ldscore_chunk[:, 0]
+
+        # Create a DataFrame
+        bim_data = pd.read_csv(
+            f"{self.config.bfile_root}.{chrom}.bim",
+            sep="\t",
+            header=None,
+            names=["CHR", "SNP", "CM", "BP", "A1", "A2"],
+        )
+        w_ld_df = pd.DataFrame(
+            {
+                "SNP": self.snp_name,
+                "L2": w_ld_values,
+            }
+        )
+
+        # Add CHR, BP, and CM information
+        w_ld_df = w_ld_df.merge(bim_data[["SNP", "CHR", "BP", "CM"]], on="SNP", how="left")
+
+        # Reorder columns
+        w_ld_df = w_ld_df[["CHR", "SNP", "BP", "CM", "L2"]]
+
+        w_ld_df.to_csv(w_ld_file, sep="\t", index=False, compression="gzip")
+
+        logger.info(f"Saved w_ld for chr{chrom} to {w_ld_file}")
 
     def _calculate_annotation_ldscores(self, chrom: int):
         """
