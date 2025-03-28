@@ -104,6 +104,7 @@ def compute_regional_mkscore(
     ranks,
     frac_whole,
     adata_X_bool,
+    pearson_residuals,
 ):
     """
     Compute gmean ranks of a region.
@@ -129,7 +130,8 @@ def compute_regional_mkscore(
         # Simultaneously consider the ratio of expression fractions and ranks
         gene_ranks_region = gene_ranks_region * frac_region
 
-    mkscore = np.exp(gene_ranks_region**1.5) - 1
+    mkscore = np.exp(gene_ranks_region) - 1 if not pearson_residuals else gene_ranks_region
+
     return mkscore.astype(np.float16, copy=False)
 
 
@@ -246,11 +248,18 @@ def run_latent_to_gene(config: LatentToGeneConfig):
     # Create mappings
     n_cells = adata.n_obs
     n_genes = adata.n_vars
-
+    pearson_residuals = True if "pearson_residuals" in adata.layers else False
     ranks = np.zeros((n_cells, adata.n_vars), dtype=np.float16)
-    for i in tqdm(range(n_cells), desc="Computing ranks per cell"):
-        data = adata_X[i, :].toarray().flatten()
-        ranks[i, :] = rankdata(data, method="average")
+
+    if pearson_residuals:
+        logger.info("Using pearson residuals for ranking.")
+        data = adata.layers["pearson_residuals"]
+        for i in tqdm(range(n_cells), desc="Computing ranks per cell"):
+            ranks[i, :] = rankdata(data[i, :], method="average")
+    else:
+        for i in tqdm(range(n_cells), desc="Computing ranks per cell"):
+            data = adata_X[i, :].toarray().flatten()
+            ranks[i, :] = rankdata(data, method="average")
 
     if gM is None:
         gM = gmean(ranks, axis=0)
@@ -280,6 +289,7 @@ def run_latent_to_gene(config: LatentToGeneConfig):
             ranks,
             frac_whole,
             adata_X_bool,
+            pearson_residuals,
         )
 
     logger.info("------Computing marker scores...")

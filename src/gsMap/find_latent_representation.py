@@ -53,10 +53,9 @@ def preprocess_data(adata, params):
 
         # Get the pearson residuals
         if params.pearson_residuals:
-            print("we are using PR-1")
             sc.experimental.pp.normalize_pearson_residuals(adata, inplace=False)
             pearson_residuals = sc.experimental.pp.normalize_pearson_residuals(
-                adata, inplace=False
+                adata, inplace=False, clip=10
             )
             adata.layers["pearson_residuals"] = pearson_residuals["X"]
 
@@ -75,7 +74,6 @@ class LatentRepresentationFinder:
         self.params = args
 
         if "pearson_residuals" in adata.layers:
-            print("we are using PR-2")
             self.expression_array = (
                 adata[:, adata.var.highly_variable].layers["pearson_residuals"].copy()
             )
