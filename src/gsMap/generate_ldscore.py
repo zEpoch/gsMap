@@ -677,10 +677,14 @@ class LDScoreCalculator:
             self.keep_snp_mask = self.snp_gene_pair_dummy.index.isin(keep_snp)
             self.snp_name = self.snp_gene_pair_dummy.index[self.keep_snp_mask].to_list()
             logger.info(f"Kept {len(self.snp_name)} SNPs after filtering with {keep_snp_file}")
+            logger.info("These filtered SNPs will be used to calculate w_ld")
         else:
             self.keep_snp_mask = None
             self.snp_name = self.snp_gene_pair_dummy.index.to_list()
             logger.info(f"Using all {len(self.snp_name)} SNPs (no filter applied)")
+            logger.warning(
+                "No keep_snp_root provided, all SNPs will be used to calculate w_ld. This may lead to less accurate results."
+            )
 
     def _process_additional_baseline(self, chrom: int):
         """

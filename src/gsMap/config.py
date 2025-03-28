@@ -360,7 +360,11 @@ def add_spatial_ldsc_args(parser):
         "--sumstats_file", type=str, required=True, help="Path to GWAS summary statistics file."
     )
     parser.add_argument(
-        "--w_file", type=str, required=True, help="Path to regression weight file."
+        "--w_file",
+        type=str,
+        required=False,
+        default=None,
+        help="Path to regression weight file. If not provided, will use weights generated in the generate_ldscore step.",
     )
     parser.add_argument(
         "--trait_name", type=str, required=True, help="Name of the trait being analyzed."
@@ -1062,7 +1066,7 @@ class GenerateLDScoreConfig(ConfigWithAutoPaths):
 
 @dataclass
 class SpatialLDSCConfig(ConfigWithAutoPaths):
-    w_file: str
+    w_file: str | None = None
     # ldscore_save_dir: str
     use_additional_baseline_annotation: bool = True
     trait_name: str | None = None
@@ -1112,8 +1116,19 @@ class SpatialLDSCConfig(ConfigWithAutoPaths):
         for sumstats_file in self.sumstats_config_dict.values():
             assert Path(sumstats_file).exists(), f"{sumstats_file} does not exist."
 
-        # check if additional baseline annotation is exist
-        # self.use_additional_baseline_annotation = False
+        # Handle w_file
+        if self.w_file is None:
+            w_ld_dir = Path(self.ldscore_save_dir) / "w_ld"
+            if w_ld_dir.exists():
+                self.w_file = str(w_ld_dir / "weights.")
+                logger.info(f"Using weights generated in the generate_ldscore step: {self.w_file}")
+            else:
+                raise ValueError(
+                    "No w_file provided and no weights found in generate_ldscore output. "
+                    "Either provide --w_file or run generate_ldscore first."
+                )
+        else:
+            logger.info(f"Using provided weights file: {self.w_file}")
 
         if self.use_additional_baseline_annotation:
             self.process_additional_baseline_annotation()
@@ -1124,16 +1139,6 @@ class SpatialLDSCConfig(ConfigWithAutoPaths):
 
         if not dir_exists:
             self.use_additional_baseline_annotation = False
-            # if self.use_additional_baseline_annotation:
-            #     logger.warning(f"additional_baseline directory is not found in {self.ldscore_save_dir}.")
-            #     print('''\
-            #         if you want to use additional baseline annotation,
-            #         please provide additional baseline annotation when calculating ld score.
-            #         ''')
-            #     raise FileNotFoundError(
-            #         f'additional_baseline directory is not found.')
-            # return
-            # self.use_additional_baseline_annotation = self.use_additional_baseline_annotation or True
         else:
             logger.info(
                 "------Additional baseline annotation is provided. It will be used with the default baseline annotation."
