@@ -232,6 +232,9 @@ def add_find_latent_representations_args(parser):
         action="store_true",
         help="Enable hierarchical latent representation finding.",
     )
+    parser.add_argument(
+        "--pearson_residuals", action="store_true", help="Using the pearson residuals."
+    )
 
 
 def chrom_choice(value):
@@ -678,6 +681,9 @@ def add_run_all_mode_args(parser):
     parser.add_argument(
         "--gM_slices", type=str, default=None, help="Path to the slice mean file (optional)."
     )
+    parser.add_argument(
+        "--pearson_residuals", action="store_true", help="Using the pearson residuals."
+    )
 
 
 def ensure_path_exists(func):
@@ -854,6 +860,7 @@ class FindLatentRepresentationsConfig(ConfigWithAutoPaths):
     var: bool = False
     convergence_threshold: float = 1e-4
     hierarchically: bool = False
+    pearson_residuals: bool = False
 
     def __post_init__(self):
         # self.output_hdf5_path = self.hdf5_with_latent_path

@@ -50,6 +50,16 @@ def preprocess_data(adata, params):
         # HVGs based on count
         logger.info("Dealing with count data...")
         sc.pp.highly_variable_genes(adata, flavor="seurat_v3", n_top_genes=params.feat_cell)
+
+        # Get the pearson residuals
+        if params.pearson_residuals:
+            print("we are using PR-1")
+            sc.experimental.pp.normalize_pearson_residuals(adata, inplace=False)
+            pearson_residuals = sc.experimental.pp.normalize_pearson_residuals(
+                adata, inplace=False
+            )
+            adata.layers["pearson_residuals"] = pearson_residuals["X"]
+
         # Normalize the data
         sc.pp.normalize_total(adata, target_sum=1e4)
         sc.pp.log1p(adata)
@@ -64,8 +74,14 @@ class LatentRepresentationFinder:
     def __init__(self, adata, args: FindLatentRepresentationsConfig):
         self.params = args
 
-        self.expression_array = adata[:, adata.var.highly_variable].X.copy()
-        self.expression_array = sc.pp.scale(self.expression_array, max_value=10)
+        if "pearson_residuals" in adata.layers:
+            print("we are using PR-2")
+            self.expression_array = (
+                adata[:, adata.var.highly_variable].layers["pearson_residuals"].copy()
+            )
+        else:
+            self.expression_array = adata[:, adata.var.highly_variable].X.copy()
+            self.expression_array = sc.pp.scale(self.expression_array, max_value=10)
 
         # Construct the neighboring graph
         self.graph_dict = construct_adjacency_matrix(adata, self.params)
@@ -103,6 +119,8 @@ def run_find_latent_representation(args: FindLatentRepresentationsConfig):
     # Load the ST data
     logger.info(f"Loading ST data of {args.sample_name}...")
     adata = sc.read_h5ad(args.input_hdf5_path)
+    sc.pp.filter_genes(adata, min_cells=1)
+
     logger.info(f"The ST data contains {adata.shape[0]} cells, {adata.shape[1]} genes.")
 
     # Load the cell type annotation
