@@ -480,34 +480,6 @@ class LDScoreCalculator:
                 f"Enhancer annotation file not found: {self.config.enhancer_annotation_file}"
             )
 
-        # Validate gene_window_enhancer_priority configuration
-        if (
-            self.config.enhancer_annotation_file is not None
-            and self.config.gene_window_enhancer_priority is None
-        ):
-            logger.warning(
-                "enhancer_annotation_file is provided but gene_window_enhancer_priority is not provided. "
-                "Setting gene_window_enhancer_priority to 'enhancer_only'"
-            )
-            self.config.gene_window_enhancer_priority = "enhancer_only"
-
-        if (
-            self.config.enhancer_annotation_file is None
-            and self.config.gene_window_enhancer_priority is not None
-        ):
-            logger.warning(
-                "gene_window_enhancer_priority is provided but enhancer_annotation_file is not provided. "
-                "Setting gene_window_enhancer_priority to None"
-            )
-            self.config.gene_window_enhancer_priority = None
-
-        valid_priorities = [None, "gene_window_first", "enhancer_first", "enhancer_only"]
-        if self.config.gene_window_enhancer_priority not in valid_priorities:
-            raise ValueError(
-                f"gene_window_enhancer_priority must be one of {valid_priorities}, "
-                f"but got {self.config.gene_window_enhancer_priority}"
-            )
-
     def _initialize_enhancer(self) -> pr.PyRanges:
         """
         Initialize enhancer data.
