@@ -953,11 +953,11 @@ class GenerateLDScoreConfig(ConfigWithAutoPaths):
     chrom: int | str
 
     bfile_root: str
-    keep_snp_root: str | None
 
     # annotation by gene distance
     gtf_annotation_file: str
     gene_window_size: int = 50000
+    keep_snp_root: str | None = None
 
     # annotation by enhancer
     enhancer_annotation_file: str = None

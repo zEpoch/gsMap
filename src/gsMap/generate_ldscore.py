@@ -259,7 +259,9 @@ def get_snp_pass_maf(bfile_root: str, chrom: int, maf_min: float = 0.05) -> list
     list
         List of SNP IDs that pass the MAF threshold
     """
-    array_snps, array_indivs, geno_array = load_bfile(bfile_chr_prefix=f"{bfile_root}.{chrom}")
+    array_snps, array_indivs, geno_array = load_bfile(
+        bfile_chr_prefix=f"{bfile_root}.{chrom}", mafMin=maf_min
+    )
 
     m = len(array_snps.IDList)
     n = len(array_indivs.IDList)
@@ -268,8 +270,7 @@ def get_snp_pass_maf(bfile_root: str, chrom: int, maf_min: float = 0.05) -> list
     )
 
     # Filter SNPs by MAF
-    ii = geno_array.maf > maf_min
-    snp_pass_maf = array_snps.IDList[ii]
+    snp_pass_maf = array_snps.IDList.iloc[geno_array.kept_snps]
     logger.info(f"After filtering SNPs with MAF < {maf_min}, {len(snp_pass_maf)} SNPs remain")
 
     return snp_pass_maf.SNP.to_list()
@@ -320,11 +321,19 @@ def get_ldscore(
     elif ld_unit == "CM":
         max_dist = ld_wind
         coords = np.array(array_snps.df["CM"])[geno_array.kept_snps]
+        # Check if the CM is all 0
+        if np.all(coords == 0):
+            logger.warning(
+                "All CM values are 0 in the BIM file. Using 1MB window size for LD score calculation."
+            )
+            max_dist = 1_000_000
+            coords = np.array(array_snps.df["BP"])[geno_array.kept_snps]
     else:
         raise ValueError(f"Invalid ld_wind_unit: {ld_unit}. Must be one of: SNP, KB, CM")
 
     # Calculate blocks for LD computation
     block_left = getBlockLefts(coords, max_dist)
+    assert block_left.sum() > 0, "Invalid window size, please check the ld_wind parameter."
 
     # Calculate LD scores
     ld_scores = pd.DataFrame(geno_array.ldScoreVarBlocks(block_left, 100, annot=annot_matrix))
@@ -682,9 +691,7 @@ class LDScoreCalculator:
             self.keep_snp_mask = None
             self.snp_name = self.snp_gene_pair_dummy.index.to_list()
             logger.info(f"Using all {len(self.snp_name)} SNPs (no filter applied)")
-            logger.warning(
-                "No keep_snp_root provided, all SNPs will be used to calculate w_ld. This may lead to less accurate results."
-            )
+            logger.warning("No keep_snp_root provided, all SNPs will be used to calculate w_ld.")
 
     def _process_additional_baseline(self, chrom: int):
         """
@@ -1335,12 +1342,13 @@ def run_generate_ldscore(config: GenerateLDScoreConfig):
         # Process one chromosome
         try:
             chrom = int(config.chrom)
-            calculator.process_chromosome(chrom)
         except ValueError:
             logger.error(f"Invalid chromosome: {config.chrom}")
             raise ValueError(
                 f"Invalid chromosome: {config.chrom}. Must be an integer between 1-22 or 'all'"
             ) from None
+        else:
+            calculator.process_chromosome(chrom)
 
     # Create a done file to mark completion
     done_file = Path(config.ldscore_save_dir) / f"{config.sample_name}_generate_ldscore.done"
