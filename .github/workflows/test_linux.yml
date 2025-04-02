@@ -78,6 +78,7 @@ jobs:
           COLUMNS: 120
         run: |
           python -m pytest --cov=src \
+              --junitxml=junit.xml -o junit_family=legacy \
               --cov-report=term-missing \
               --cov-report=xml \
               --cov-config=.coveragerc \
@@ -91,3 +92,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: false
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
