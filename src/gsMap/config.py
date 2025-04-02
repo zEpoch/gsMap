@@ -1239,6 +1239,7 @@ class RunAllModeConfig(ConfigWithAutoPaths):
 
     # == Find Latent Representation PARAMETERS ==
     n_comps: int = 300
+    pearson_residuals: bool = False
 
     # == latent 2 Gene PARAMETERS ==
     gM_slices: str | None = None
@@ -1254,7 +1255,6 @@ class RunAllModeConfig(ConfigWithAutoPaths):
     # === homolog PARAMETERS ===
     homolog_file: str | None = None
 
-    pearson_residuals: bool = False
     max_processes: int = 10
 
     def __post_init__(self):

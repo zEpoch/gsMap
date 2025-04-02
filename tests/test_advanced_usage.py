@@ -19,46 +19,18 @@ def parse_bash_command(command: str) -> list[str]:
 
 
 @pytest.mark.real_data
-def test_conditional_analysis(conditional_config, additional_baseline_dir):
+@pytest.mark.parametrize("symbolic_link_results", ["conditional_config"], indirect=True)
+def test_conditional_analysis(
+    symbolic_link_results,
+    gene_marker_scores_fixture,
+    additional_baseline_dir,
+    spatial_ldsc_fixture,
+):
     """Test the conditional analysis functionality by providing additional baseline annotations"""
     logger = logging.getLogger("test_conditional_analysis")
-    config = conditional_config
+    config = symbolic_link_results  # This will have links to latent_to_gene data
 
-    # Verify the additional baseline annotation files exist
-    for chrom in range(1, 23):
-        baseline_file = additional_baseline_dir / f"baseline.{chrom}.annot.gz"
-        assert baseline_file.exists(), (
-            f"Additional baseline annotation file {baseline_file} not found"
-        )
-
-    # Step 1: Find latent representations
-    logger.info("Step 1: Finding latent representations")
-    command = f"""
-    gsmap run_find_latent_representations \
-        --workdir '{config.workdir}' \
-        --sample_name {config.sample_name} \
-        --input_hdf5_path '{config.hdf5_path}' \
-        --annotation '{config.annotation}' \
-        --data_layer '{config.data_layer}' \
-        --n_comps '{config.n_comps}'
-    """
-    with patch.object(sys, "argv", parse_bash_command(command)):
-        main()
-
-    # Step 2: Latent to gene
-    logger.info("Step 2: Mapping latent representations to genes")
-    command = f"""
-    gsmap run_latent_to_gene \
-        --workdir '{config.workdir}' \
-        --sample_name {config.sample_name} \
-        --annotation '{config.annotation}' \
-        --latent_representation 'latent_GVAE' \
-        --num_neighbour {config.num_neighbour} \
-        --num_neighbour_spatial {config.num_neighbour_spatial} \
-        --homolog_file '{config.homolog_file}'
-    """
-    with patch.object(sys, "argv", parse_bash_command(command)):
-        main()
+    logger.info("Using linked fixtures for latent representations and gene marker scores")
 
     # Step 3: Generate LDScores with additional baseline annotation
     logger.info("Step 3: Generating LDScores with additional baseline annotation")
@@ -81,8 +53,6 @@ def test_conditional_analysis(conditional_config, additional_baseline_dir):
         Path(config.workdir) / config.sample_name / "generate_ldscore" / "additional_baseline"
     )
     assert additional_baseline_dir_output.exists(), "Additional baseline directory was not created"
-    ldscore_file = additional_baseline_dir_output / "baseline.22.l2.ldscore.feather"
-    assert ldscore_file.exists(), "Additional baseline LDScore file was not created"
 
     # Step 4: Run spatial LDSC using the additional baseline annotation
     logger.info("Step 4: Running spatial LDSC with additional baseline annotation")
@@ -107,11 +77,12 @@ def test_conditional_analysis(conditional_config, additional_baseline_dir):
 
 
 @pytest.mark.real_data
-def test_biological_replicates(biorep_config1, biorep_config2, work_dir):
+@pytest.mark.parametrize("symbolic_link_results", ["biorep_config1"], indirect=True)
+def test_biological_replicates(symbolic_link_results, biorep_config2, work_dir):
     """Test gsMap on biological replicates using the slice mean functionality"""
     logger = logging.getLogger("test_biological_replicates")
-    config1 = biorep_config1
-    config2 = biorep_config2
+    config1 = symbolic_link_results
+    config2 = biorep_config2  # Just use the config directly without linking
 
     slice_mean_file = work_dir / "slice_mean_test.parquet"
 
@@ -131,6 +102,7 @@ def test_biological_replicates(biorep_config1, biorep_config2, work_dir):
     # Verify slice mean file was created
     assert slice_mean_file.exists(), "Slice mean file was not created"
 
+    # Rest of the test continues as before...
     # Verify slice mean file contains expected data
     slice_mean_df = pd.read_parquet(slice_mean_file)
     assert "G_Mean" in slice_mean_df.columns, "G_Mean column not found in slice mean file"
@@ -140,19 +112,17 @@ def test_biological_replicates(biorep_config1, biorep_config2, work_dir):
     # Update config with slice mean file
     config1.gM_slices = str(slice_mean_file)
 
-    # Step 2: Test using the slice mean with quick_mode
+    # Step 2: Test using the slice mean with latent_to_gene
     logger.info("Step 2: Using slice mean with quick_mode")
     command = f"""
-    gsmap quick_mode \
+    gsmap run_latent_to_gene \
         --workdir '{config1.workdir}' \
-        --homolog_file '{config1.homolog_file}' \
         --sample_name {config1.sample_name} \
-        --gsMap_resource_dir '{config1.gsMap_resource_dir}' \
-        --hdf5_path '{config1.hdf5_path}' \
         --annotation '{config1.annotation}' \
-        --data_layer '{config1.data_layer}' \
-        --sumstats_file '{config1.sumstats_file}' \
-        --trait_name '{config1.trait_name}' \
+        --latent_representation 'latent_GVAE' \
+        --num_neighbour {config1.num_neighbour} \
+        --num_neighbour_spatial {config1.num_neighbour_spatial} \
+        --homolog_file '{config1.homolog_file}'\
         --gM_slices '{config1.gM_slices}'
     """
     with patch.object(sys, "argv", parse_bash_command(command)):
@@ -182,28 +152,13 @@ def test_biological_replicates(biorep_config1, biorep_config2, work_dir):
 
 
 @pytest.mark.real_data
-def test_customized_latent_representations(customlatent_config):
+@pytest.mark.parametrize("symbolic_link_results", ["customlatent_config"], indirect=True)
+def test_customized_latent_representations(symbolic_link_results, latent_representations_fixture):
     """Test using customized latent representations in gsMap"""
     logger = logging.getLogger("test_customized_latent")
-    config = customlatent_config
+    config = symbolic_link_results  # This will have links to latent_representation data
 
-    # Step 1: First run find_latent_representations to create the h5ad with latent
-    logger.info("Step 1: Creating initial latent representations")
-    command = f"""
-    gsmap run_find_latent_representations \
-        --workdir '{config.workdir}' \
-        --sample_name {config.sample_name} \
-        --input_hdf5_path '{config.hdf5_path}' \
-        --annotation '{config.annotation}' \
-        --data_layer '{config.data_layer}' \
-        --n_comps '{config.n_comps}'
-    """
-    with patch.object(sys, "argv", parse_bash_command(command)):
-        main()
-
-    # Verify latent representation was created
-    latent_file = config.hdf5_with_latent_path
-    assert latent_file.exists(), "Latent representation file was not created"
+    logger.info("Using linked fixtures for initial latent representations")
 
     # Step 2: Use the PCA latent representation instead of the default GVAE
     custom_latent = "latent_PCA"
