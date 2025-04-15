@@ -33,6 +33,14 @@ conda activate gsMap
 pip install gsMap
 ```
 
+Install using conda:
+
+```bash
+conda create -n gsMap python>=3.10
+conda activate gsMap
+conda install bioconda::gsmap
+```
+
 Install from source:
 
 ```bash
