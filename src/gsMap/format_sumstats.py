@@ -198,6 +198,7 @@ def gwas_checkformat(gwas, config):
             if "Z" in gwas.columns:
                 pass
             elif "P" in gwas.columns:
+                gwas["P"] = gwas["P"].astype(float)
                 gwas["Z"] = np.sqrt(chi2.isf(gwas.P, 1)) * np.where(gwas["BETA"] < 0, -1, 1)
             else:
                 gwas["Z"] = gwas.BETA / gwas.SE
@@ -299,6 +300,7 @@ def gwas_qc(gwas, config):
     # filter: P-value that out-of-bounds [0,1]
     if "P" in gwas.columns:
         old = len(gwas)
+        gwas["P"] = gwas["P"].astype(float)
         gwas = gwas.loc[filter_pvals(gwas["P"], config)]
         drops["P"] += old - len(gwas)
         logger.info(f"Removed {drops['P']} SNPs with out-of-bounds p-values.")
