@@ -44,7 +44,7 @@ conda install bioconda::gsmap
 Install from source:
 
 ```bash
-git clone https://github.com/JianYang-Lab/gsMap
+git clone https://github.com/zEpoch/gsMap
 cd gsMap
 pip install -e .
 ```
