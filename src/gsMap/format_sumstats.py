@@ -25,6 +25,7 @@ default_cnames = {
     "PVALUE": "P",
     "p_value": "P",
     "P_VALUE": "P",
+    "Pvalue": "P",
     "PVAL": "P",
     "P_VAL": "P",
     "GC_PVALUE": "P",
@@ -78,6 +79,7 @@ default_cnames = {
     
     # SE
     "se": "SE",
+    "StdErr": "SE",
     "standard_error": "SE",
     # INFO
     "INFO": "INFO",
