@@ -18,6 +18,7 @@ default_cnames = {
     "SNP": "SNP",
     "RS": "SNP",
     "RSID": "SNP",
+    "rs_id": "SNP",
     "RS_NUMBER": "SNP",
     "RS_NUMBERS": "SNP",
     # P-VALUE
