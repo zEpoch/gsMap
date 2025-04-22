@@ -23,6 +23,7 @@ default_cnames = {
     # P-VALUE
     "P": "P",
     "PVALUE": "P",
+    "p_value": "P",
     "P_VALUE": "P",
     "PVAL": "P",
     "P_VAL": "P",
