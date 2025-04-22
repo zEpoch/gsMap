@@ -12,7 +12,9 @@ VALID_SNPS = {"AC", "AG", "CA", "CT", "GA", "GT", "TC", "TG"}
 logger = logging.getLogger(__name__)
 
 default_cnames = {
+    "chromosome": "CHR",
     # RS NUMBER
+    "variant_id": 'SNP',
     "SNP": "SNP",
     "RS": "SNP",
     "RSID": "SNP",
@@ -31,6 +33,7 @@ default_cnames = {
     "ALLELE1": "A1",
     "ALLELE_1": "A1",
     "EFFECT_ALLELE": "A1",
+    "effect_allele": "A1",
     "REFERENCE_ALLELE": "A1",
     "INC_ALLELE": "A1",
     "EA": "A1",
@@ -39,6 +42,7 @@ default_cnames = {
     "ALLELE2": "A2",
     "ALLELE_2": "A2",
     "OTHER_ALLELE": "A2",
+    "other_allele": "A2",
     "NON_EFFECT_ALLELE": "A2",
     "DEC_ALLELE": "A2",
     "NEA": "A2",
@@ -48,7 +52,9 @@ default_cnames = {
     "CASES_N": "N_CAS",
     "N_CASE": "N_CAS",
     "N_CASES": "N_CAS",
+    "n_cases": "N_CAS",
     "N_CONTROLS": "N_CON",
+    "n_controls": "N_CON",
     "N_CAS": "N_CAS",
     "N_CON": "N_CON",
     "NCONTROL": "N_CON",
@@ -68,8 +74,10 @@ default_cnames = {
     "EFFECT": "BETA",
     "b": "BETA",
     "beta": "BETA",
+    
     # SE
     "se": "SE",
+    "standard_error": "SE",
     # INFO
     "INFO": "INFO",
     "Info": "INFO",
