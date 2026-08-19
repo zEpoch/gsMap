@@ -88,6 +88,7 @@ def jackknife_for_processmap(
     ref_ld_baseline_column_sum,
     sumstats,
     baseline_annotation,
+    N_over_Nbar,
     w_ld_common_snp,
     Nbar,
     n_blocks,
@@ -108,7 +109,9 @@ def jackknife_for_processmap(
     )
     initial_w_scaled = initial_w / np.sum(initial_w)
     baseline_annotation_spot = baseline_annotation * initial_w_scaled
-    spatial_annotation_spot = spot_spatial_annotation.reshape((-1, 1)) * initial_w_scaled
+    spatial_annotation_spot = (
+        spot_spatial_annotation.reshape((-1, 1)) * N_over_Nbar * initial_w_scaled
+    )
     CHISQ = sumstats.chisq.values.reshape((-1, 1))
     y = CHISQ * initial_w_scaled
     x_focal = np.concatenate((spatial_annotation_spot, baseline_annotation_spot), axis=1)
@@ -306,12 +309,11 @@ def run_spatial_ldsc(config: SpatialLDSCConfig):
             baseline_annotation = ref_ld_baseline.copy().astype(np.float32, copy=False)
             w_ld_common_snp = w_ld.astype(np.float32, copy=False)
 
-            baseline_annotation = (
-                baseline_annotation * sumstats.N.values.reshape((-1, 1)) / sumstats.N.mean()
-            )
+            Nbar = float(sumstats.N.mean())
+            N_over_Nbar = sumstats.N.values.reshape((-1, 1)) / Nbar
+            baseline_annotation = baseline_annotation * N_over_Nbar
             baseline_annotation = append_intercept(baseline_annotation)
 
-            Nbar = sumstats.N.mean()
             chunk_size = spatial_annotation.shape[1]
 
             jackknife_func = partial(
@@ -320,6 +322,7 @@ def run_spatial_ldsc(config: SpatialLDSCConfig):
                 ref_ld_baseline_column_sum=ref_ld_baseline_column_sum,
                 sumstats=sumstats,
                 baseline_annotation=baseline_annotation,
+                N_over_Nbar=N_over_Nbar,
                 w_ld_common_snp=w_ld_common_snp,
                 Nbar=Nbar,
                 n_blocks=n_blocks,
