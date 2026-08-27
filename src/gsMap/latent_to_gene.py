@@ -302,6 +302,7 @@ def run_latent_to_gene(config: LatentToGeneConfig):
 
     # Remove mitochondrial genes
     gene_names = adata.var_names.values.astype(str)
+    gene_names = np.asarray(gene_names, dtype=str)
     mt_gene_mask = ~(np.char.startswith(gene_names, "MT-") | np.char.startswith(gene_names, "mt-"))
     mk_score = mk_score[mt_gene_mask, :]
     gene_names = gene_names[mt_gene_mask]
