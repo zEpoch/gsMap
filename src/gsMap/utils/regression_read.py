@@ -157,7 +157,8 @@ def _read_w_ld(w_file):
         columns_to_drop = ["MAF", "CM", "Gene", "TSS", "CHR", "BP"]
         columns_to_drop = [col for col in columns_to_drop if col in x.columns]
         if columns_to_drop:
-            x = x.drop(columns=columns_to_drop, axis=1)
+            # x = x.drop(columns=columns_to_drop, axis=1)
+            x = x.drop(columns=columns_to_drop, errors="ignore")
 
         w_array.append(x)
 
