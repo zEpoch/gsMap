@@ -319,5 +319,8 @@ def run_latent_to_gene(config: LatentToGeneConfig):
     logger.info(f"Marker scores saved to {output_file_path}.")
 
     # Save the modified adata object to disk
+    for col in adata.obs.columns:
+    if str(adata.obs[col].dtype).startswith("string"):
+        adata.obs[col] = adata.obs[col].astype("category")
     adata.write(config.hdf5_with_latent_path)
     logger.info(f"Modified adata object saved to {config.hdf5_with_latent_path}.")
