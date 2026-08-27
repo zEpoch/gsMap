@@ -173,7 +173,8 @@ def run_pipeline(config: RunAllModeConfig):
         run_spatial_ldsc(spatial_ldsc_config_trait)
     end_time = time.time()
     logger.info(f"Step 4 completed in {format_duration(end_time - start_time)}.")
-
+    logger.info("Stopping pipeline after spatial_ldsc as requested.")
+    return
     # Step 5: Cauchy combination test
     start_time = time.time()
     logger.info("Step 5: Running Cauchy combination test")
