@@ -686,7 +686,11 @@ def add_run_all_mode_args(parser):
         help="Path to the input spatial transcriptomics data (H5AD format).",
     )
     parser.add_argument(
-        "--annotation", type=str, required=True, help="Name of the annotation in adata.obs to use."
+        "--annotation",
+        type=str,
+        required=False,
+        default=None,
+        help="Name of the annotation in adata.obs to use. If omitted, quick_mode runs without annotation.",
     )
     parser.add_argument(
         "--data_layer",
@@ -1283,7 +1287,7 @@ class RunAllModeConfig(ConfigWithAutoPaths):
 
     # == ST DATA PARAMETERS ==
     hdf5_path: str
-    annotation: str
+    annotation: str | None = None
     data_layer: str = "X"
 
     # == Find Latent Representation PARAMETERS ==
